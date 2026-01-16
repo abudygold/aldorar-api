@@ -25,7 +25,7 @@ WORKDIR /app
 
 # Copy the binary from the builder stage
 # We name it 'server' and place it in the current WORKDIR
-COPY --from=builder /app/aldorar-api /aldorar-api
+COPY --from=builder /app/aldorar-api .
 
 # Set environment variables
 ENV NODE_ENV=production
