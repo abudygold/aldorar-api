@@ -19,9 +19,9 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o main .
 FROM alpine:latest
 
 # Install certificates for HTTPS requests
-# RUN apk --no-cache add ca-certificates
+RUN apk --no-cache add ca-certificates
 
-WORKDIR /app
+WORKDIR /root/
 
 # Copy the binary from the builder stage
 # We name it 'server' and place it in the current WORKDIR
@@ -31,4 +31,4 @@ COPY --from=builder /app/main .
 EXPOSE 8080
 
 # Run the binary
-ENTRYPOINT ["/main"]
+ENTRYPOINT ["./main"]
