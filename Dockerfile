@@ -28,7 +28,7 @@ WORKDIR /root/
 COPY --from=builder /app/aldorar-api .
 
 # Expose the port your app runs on
-EXPOSE 8080
+EXPOSE 3000
 
 # Run the binary
-ENTRYPOINT ["./aldorar-api", "--port", "8080"]
+ENTRYPOINT ["./aldorar-api"]
