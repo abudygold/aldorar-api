@@ -1,12 +1,7 @@
 services:
   aldorar-api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: aldorar-api
+    build: .
     ports:
       - "8080:8080"
-    environment:
-      - APP_ENV=production
-      - APP_PORT=8080
+    container_name: aldorar-api
     restart: unless-stopped
