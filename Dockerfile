@@ -1,35 +1,34 @@
-# ---------- Build stage ----------
+# STAGE 1: Build the binary
 FROM golang:1.25-alpine AS builder
 
+# Set the working directory inside the builder
 WORKDIR /app
 
-# Install CA certs & git
-RUN apk add --no-cache ca-certificates git
-
-# Copy go mod files first (for cache)
+# Copy dependency files first (optimizes Docker caching)
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy source
+# Copy the rest of the source code
 COPY . .
 
-# Build binary
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-    go build -o aldorar-api
+# Build the application
+# CGO_ENABLED=0 ensures the binary is statically linked (crucial for Alpine/Scratch)
+RUN CGO_ENABLED=0 GOOS=linux go build -o aldorar-api ./main.go
 
-# ---------- Runtime stage ----------
-FROM alpine:3.19
+# STAGE 2: Run the binary
+FROM alpine:latest
 
-WORKDIR /app
+# Install certificates for HTTPS requests
+RUN apk --no-cache add ca-certificates
 
-# Install CA certs
-RUN apk add --no-cache ca-certificates
+WORKDIR /root/
 
-# Copy binary from builder
+# Copy the binary from the builder stage
+# We name it 'aldorar-api' and place it in the current WORKDIR
 COPY --from=builder /app/aldorar-api .
 
-# Expose port (example: 8080)
+# Expose the port your app runs on
 EXPOSE 8080
 
-# Run app
-CMD ["./aldorar-api"]
+# Run the binary
+ENTRYPOINT ["./aldorar-api"]
