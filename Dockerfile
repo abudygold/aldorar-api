@@ -27,9 +27,6 @@ WORKDIR /root/
 # We name it 'server' and place it in the current WORKDIR
 COPY --from=builder /app/aldorar-api .
 
-# Set environment variables
-ENV NODE_ENV=production
-
 # Expose the port your app runs on
 EXPOSE 8080
 
