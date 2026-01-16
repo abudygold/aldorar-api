@@ -19,7 +19,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o main .
 FROM alpine:latest
 
 # Install certificates for HTTPS requests
-RUN apk --no-cache add ca-certificates
+# RUN apk --no-cache add ca-certificates
 
 WORKDIR /app
 

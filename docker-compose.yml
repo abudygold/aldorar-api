@@ -1,7 +1,8 @@
 services:
   aldorar-api:
-    build: .
-    container_name: aldorar-api
+    build:
+      context: .
     ports:
       - "8080:8080"
+    container_name: aldorar-api
     restart: unless-stopped
