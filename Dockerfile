@@ -13,7 +13,7 @@ COPY . .
 
 # Build the application
 # CGO_ENABLED=0 ensures the binary is statically linked (crucial for Alpine/Scratch)
-RUN CGO_ENABLED=0 GOOS=linux go build -o aldorar-api ./main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o server ./main.go
 
 # STAGE 2: Run the binary
 FROM alpine:latest
@@ -24,11 +24,11 @@ RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 
 # Copy the binary from the builder stage
-# We name it 'aldorar-api' and place it in the current WORKDIR
-COPY --from=builder /app/aldorar-api .
+# We name it 'server' and place it in the current WORKDIR
+COPY --from=builder /app/server .
 
 # Expose the port your app runs on
 EXPOSE 8080
 
 # Run the binary
-ENTRYPOINT ["./aldorar-api"]
+ENTRYPOINT ["./server"]
