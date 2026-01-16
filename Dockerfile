@@ -26,7 +26,7 @@ WORKDIR /app
 RUN apk add --no-cache ca-certificates
 
 # Copy binary from builder
-COPY --from=builder /app/server ./app/aldorar-api
+COPY --from=builder /app/server .
 
 # Expose port (example: 8080)
 EXPOSE 8080
