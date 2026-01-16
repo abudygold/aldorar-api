@@ -21,7 +21,7 @@ FROM alpine:latest
 # Install certificates for HTTPS requests
 # RUN apk --no-cache add ca-certificates
 
-WORKDIR /app
+WORKDIR /root/
 
 # Copy the binary from the builder stage
 # We name it 'server' and place it in the current WORKDIR
