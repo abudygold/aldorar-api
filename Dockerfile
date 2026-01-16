@@ -31,4 +31,4 @@ COPY --from=builder /app/aldorar-api .
 EXPOSE 8080
 
 # Run the binary
-CMD ["./aldorar-api"]
+ENTRYPOINT ["./aldorar-api", "--port", "8080"]
