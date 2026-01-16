@@ -31,8 +31,8 @@ jobs:
             echo "🚀 Deploying Go API..."
 
             # Create app dir if not exists
-            # mkdir -p ${{ secrets.APP_DIR }}
-            cd ${{ secrets.APP_DIR }}
+            # mkdir -p ${{ secrets.VPS_PATH }}
+            cd ${{ secrets.VPS_PATH }}
 
             # Clone repo if first time
             # if [ ! -d ".git" ]; then
