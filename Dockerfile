@@ -13,7 +13,7 @@ COPY . .
 
 # Build the application
 # CGO_ENABLED=0 ensures the binary is statically linked (crucial for Alpine/Scratch)
-RUN CGO_ENABLED=0 GOOS=linux go build -o /aldorar-api
+RUN CGO_ENABLED=0 GOOS=linux go build -o aldorar-api .
 
 # STAGE 2: Run the binary
 FROM alpine:latest
