@@ -1,8 +1,6 @@
 services:
   aldorar-api:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
     container_name: aldorar-api
     ports:
       - "8080:8080"
