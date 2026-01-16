@@ -3,6 +3,6 @@ services:
     build:
       context: .
     ports:
-      - "8080:8080"
+      - "3000:3000"
     container_name: aldorar-api
     restart: unless-stopped
