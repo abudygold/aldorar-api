@@ -31,13 +31,13 @@ jobs:
             echo "🚀 Deploying Go API..."
 
             # Create app dir if not exists
-            mkdir -p ${{ secrets.APP_DIR }}
+            # mkdir -p ${{ secrets.APP_DIR }}
             cd ${{ secrets.APP_DIR }}
 
             # Clone repo if first time
-            if [ ! -d ".git" ]; then
-              git clone https://github.com/${{ github.repository }} .
-            fi
+            # if [ ! -d ".git" ]; then
+            #   git clone https://github.com/${{ github.repository }} .
+            # fi
 
             # Pull latest code
             git pull origin main
