@@ -20,10 +20,10 @@ jobs:
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_PATH }}
+          key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             # 1. Navigate to your project folder (adjust the path)
-            cd ${{ secrets.VPS_USER }}
+            cd ${{ secrets.VPS_PATH }}
 
             # 2. Pull the latest code
             git pull origin main
