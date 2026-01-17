@@ -1,34 +1,18 @@
-# STAGE 1: Build the binary
-FROM golang:1.25-alpine AS builder
+# Use the official Node.js image
+FROM node:22-alpine
 
-# Set the working directory inside the builder
-WORKDIR /app
+# Create app directory
+WORKDIR /usr/src/app
 
-# Copy dependency files first (optimizes Docker caching)
-COPY go.mod go.sum ./
-RUN go mod download
+# Copy package files and install dependencies
+COPY package*.json ./
+RUN npm install
 
-# Copy the rest of the source code
+# Copy the rest of your application code
 COPY . .
-
-# Build the application
-# CGO_ENABLED=0 ensures the binary is statically linked (crucial for Alpine/Scratch)
-RUN CGO_ENABLED=0 GOOS=linux go build -o aldorar-api .
-
-# STAGE 2: Run the binary
-FROM alpine:latest
-
-# Install certificates for HTTPS requests
-# RUN apk --no-cache add ca-certificates
-
-WORKDIR /root/
-
-# Copy the binary from the builder stage
-# We name it 'server' and place it in the current WORKDIR
-COPY --from=builder /app/aldorar-api .
 
 # Expose the port your app runs on
 EXPOSE 3000
 
-# Run the binary
-ENTRYPOINT ["./aldorar-api"]
+# Command to run the app
+CMD ["node", "index.js"]

@@ -1,53 +1,36 @@
-# Created by Abdullah Umar Babsel
-name: Deploy Go API
+name: Deploy Express App
 
 on:
   push:
-    branches:
-      - main
+    branches: [main] # Triggers only on pushes to the main branch
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.9.0
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@master
         with:
-          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_PATH }}
+          script: |
+            # 1. Navigate to your project folder (adjust the path)
+            cd ${{ secrets.VPS_USER }}
 
-      - name: Add VPS to known_hosts
-        run: |
-          ssh-keyscan -p ${{ secrets.VPS_PORT }} ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Deploy to VPS
-        run: |
-          ssh -p ${{ secrets.VPS_PORT }} ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-            set -e
-
-            echo "🚀 Deploying Go API..."
-
-            # Create app dir if not exists
-            # mkdir -p ${{ secrets.VPS_PATH }}
-            cd ${{ secrets.VPS_PATH }}
-
-            # Clone repo if first time
-            # if [ ! -d ".git" ]; then
-            #   git clone https://github.com/${{ github.repository }} .
-            # fi
-
-            # Pull latest code
+            # 2. Pull the latest code
             git pull origin main
 
-            # Build & restart container
-            docker compose down
-            docker compose up -d --build
-            
-            # Cleanup old unused images to save VPS space
-            docker image prune -f
+            # 3. Rebuild and restart the containers
+            # --build ensures the Dockerfile is re-processed with new code
+            docker-compose up -d --build
 
-            echo "✅ Deploy success"
-          EOF
+            # 4. Cleanup old unused images to save VPS space
+            docker image prune -f
