@@ -1,12 +1,39 @@
 services:
   aldorar-api:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
     container_name: aldorar-api
+    restart: unless-stopped
+    env_file:
+      - .env
     ports:
       - "3000:3000"
-    environment:
-      - APP_ENV=production
-      - APP_PORT=3000
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres_db
     restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  pgdata:
+
+
+# services:
+#   aldorar-api:
+#     build:
+#       context: .
+#       dockerfile: Dockerfile
+#     container_name: aldorar-api
+#     ports:
+#       - "3000:3000"
+#     environment:
+#       - APP_ENV=production
+#       - APP_PORT=3000
+#     restart: unless-stopped
