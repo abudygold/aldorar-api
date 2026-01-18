@@ -19,4 +19,4 @@ ENV PORT=3000
 EXPOSE 3000
 
 # Run server
-CMD ["node", "src/server.js"]
+CMD ["node", "server.js"]
