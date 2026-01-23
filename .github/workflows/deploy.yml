@@ -32,7 +32,7 @@ jobs:
 
             # 3. Rebuild and restart the containers
             # --build ensures the Dockerfile is re-processed with new code
-            docker compose up -d --build
+            docker compose up -d --build --force-recreate
 
             # 4. Cleanup old unused images to save VPS space
             docker image prune -f
