@@ -5,7 +5,7 @@ export const createArticleSchema = z.object({
   slug: z.string().max(255),
   category: z.string(),
   content: z.string().optional(),
-  shortContent: z.string().max(100),
+  shortContent: z.string().max(150),
   thumbnailUrl: z.string(),
   isPublish: z.boolean().optional(),
 });
