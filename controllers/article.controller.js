@@ -3,9 +3,25 @@ import { toCamel } from "../utils/camelcase.js";
 import { successResp, errorResp } from "../utils/response.js";
 import { updateArticleSchema } from "../validations/article.validation.js";
 
-export const listArticles = async (_, res, next) => {
+export const listArticles = async (req, res, next) => {
   try {
-    const { rows } = await pool.query(`
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(parseInt(req.query.limit, 10) || 10, 100); // max 100
+    const offset = (page - 1) * limit;
+
+    // 1️⃣ Get total count
+    const countResult = await pool.query(`
+      SELECT COUNT(*)::int AS total
+      FROM articles
+      WHERE is_publish = true
+    `);
+
+    const total = countResult.rows[0].total;
+    const totalPages = Math.ceil(total / limit);
+
+    // 2️⃣ Get paginated data
+    const { rows } = await pool.query(
+      `
       SELECT
         a.title,
         a.slug,
@@ -21,9 +37,26 @@ export const listArticles = async (_, res, next) => {
       JOIN users u ON u.id = a.author_id
       WHERE a.is_publish = true
       ORDER BY a.created_at DESC
-    `);
+      LIMIT $1 OFFSET $2
+    `,
+      [limit, offset],
+    );
 
-    successResp(res, toCamel(rows), "Article list");
+    successResp(
+      res,
+      {
+        rows: toCamel(rows),
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNext: page < totalPages,
+          hasPrev: page > 1,
+        },
+      },
+      "Article list",
+    );
   } catch (err) {
     next(err);
   }
