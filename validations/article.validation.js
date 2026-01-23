@@ -6,7 +6,7 @@ export const createArticleSchema = z.object({
   category: z.string(),
   content: z.string().optional(),
   shortContent: z.string().max(100),
-  thumbnailUrl: z.string().url(),
+  thumbnailUrl: z.string(),
   isPublish: z.boolean().optional(),
 });
 

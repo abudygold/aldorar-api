@@ -6,23 +6,22 @@ import { updateArticleSchema } from "../validations/article.validation.js";
 export const listArticles = async (_, res, next) => {
   try {
     const { rows } = await pool.query(`
-    SELECT
-      a.id,
-      a.title,
-      a.slug,
-      a.category,
-      a.content,
-      a.short_content,
-      a.thumbnail_url,
-      a.created_at,
-      a.updated_at,
-      a.is_publish,
-      u.full_name AS author_name
-    FROM articles a
-    JOIN users u ON u.id = a.author_id
-    WHERE a.is_publish = true
-    ORDER BY a.created_at DESC
-  `);
+      SELECT
+        a.title,
+        a.slug,
+        a.category,
+        a.content,
+        a.short_content,
+        a.thumbnail_url,
+        a.created_at,
+        a.updated_at,
+        a.is_publish,
+        u.full_name AS author_name
+      FROM articles a
+      JOIN users u ON u.id = a.author_id
+      WHERE a.is_publish = true
+      ORDER BY a.created_at DESC
+    `);
 
     successResp(res, toCamel(rows), "Article list");
   } catch (err) {
@@ -33,7 +32,22 @@ export const listArticles = async (_, res, next) => {
 export const getArticle = async (req, res, next) => {
   try {
     const { rows } = await pool.query(
-      "SELECT * FROM articles WHERE slug = $1 AND is_publish = true",
+      `
+      SELECT
+        a.title,
+        a.slug,
+        a.category,
+        a.content,
+        a.short_content,
+        a.thumbnail_url,
+        a.created_at,
+        a.updated_at,
+        a.is_publish,
+        u.full_name AS author_name
+      FROM articles a
+      JOIN users u ON u.id = a.author_id
+      WHERE slug = $1 AND is_publish = true
+    `,
       [req.params.id],
     );
 
