@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
 import { pool } from "../config/db.js";
-import { toCamel } from "../utils/camelcase.js";
+import { toCamelCase } from "../utils/camelcase.js";
 
 export const createUser = async (req, res) => {
   const { fullName, email, password, phone, role } = req.body;
@@ -13,14 +13,14 @@ export const createUser = async (req, res) => {
     [fullName, email, hash, phone, role],
   );
 
-  res.json(toCamel(rows[0]));
+  res.json(toCamelCase(rows[0]));
 };
 
 export const listUsers = async (_, res) => {
   const { rows } = await pool.query(
     "SELECT id, full_name, email, phone, role FROM users",
   );
-  res.json(toCamel(rows));
+  res.json(toCamelCase(rows));
 };
 
 export const getUser = async (req, res) => {
@@ -28,7 +28,7 @@ export const getUser = async (req, res) => {
     "SELECT id, full_name, email, phone, role FROM users WHERE id=$1",
     [req.params.id],
   );
-  res.json(toCamel(rows[0]));
+  res.json(toCamelCase(rows[0]));
 };
 
 export const updateUser = async (req, res) => {
@@ -41,7 +41,7 @@ export const updateUser = async (req, res) => {
     [fullName, phone, req.params.id],
   );
 
-  res.json(toCamel(rows[0]));
+  res.json(toCamelCase(rows[0]));
 };
 
 export const deleteUser = async (req, res) => {

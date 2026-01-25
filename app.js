@@ -1,7 +1,9 @@
 import express from "express";
 import cors from "cors";
 import authRoutes from "./routes/auth.routes.js";
-import articleRoutes from "./routes/article.routes.js";
+import blogRoutes from "./routes/blog.routes.js";
+import categoriesRoutes from "./routes/categories.routes.js";
+import umrohPackageRoutes from "./routes/umroh-package.routes.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import slowDown from "express-slow-down";
 
@@ -26,6 +28,8 @@ app.use(express.json());
 app.use(errorHandler);
 
 app.use("/auth", authRoutes);
-app.use("/articles", articleRoutes);
+app.use("/blog", blogRoutes);
+app.use("/categories", categoriesRoutes);
+app.use("/umroh-packages", umrohPackageRoutes);
 
 export default app;
