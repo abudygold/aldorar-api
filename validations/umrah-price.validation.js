@@ -1,12 +1,9 @@
 import { z } from "zod";
 
 export const createSchema = z.object({
-  title: z.string().min(5).max(200),
-  content: z.string().min(20),
-  shortContent: z.string().max(200),
-  thumbnailUrl: z.string(),
-  categoryId: z.string().uuid(),
-  isPublish: z.boolean().optional(),
+  umrahPackageId: z.string().uuid(),
+  roomType: z.enum(["quad", "triple", "double"]),
+  price: z.number().positive(),
 });
 
 export const updateSchema = createSchema

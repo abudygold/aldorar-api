@@ -1,13 +1,13 @@
 import express from "express";
-import { login, logout } from "../controllers/auth.controller.js";
+import * as ctrl from "../controllers/auth.controller.js";
+import { validate } from "../middlewares/validate.js";
+import { auth } from "../middlewares/auth.middleware.js";
+import { loginSchema } from "../validations/auth.validation.js";
 
 const router = express.Router();
 
-/**
- * PUBLIC
- * POST /auth/login
- */
-router.post("/login", login);
-router.post("/logout", logout);
+// PROTECTED
+router.post("/login", validate(loginSchema), ctrl.login);
+router.post("/logout", auth, ctrl.logout);
 
 export default router;

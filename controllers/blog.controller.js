@@ -22,20 +22,13 @@ export const findAll = async (req, res, next) => {
     const { rows } = await pool.query(
       `
         SELECT
-          b.title,
-          b.slug,
-          b.content,
-          b.short_content,
-          b.thumbnail_url,
-          b.created_at,
-          b.updated_at,
-          b.is_publish,
+          b.*,
           c.label AS category,
-          u.full_name AS author_name
+          u.full_name AS author
         FROM blog b
-        JOIN categories c ON c.code = b.category_id
+        JOIN categories c ON c.id = b.category_id
         JOIN users u ON u.id = b.author_id
-        WHERE b.is_publish = true
+        WHERE b.is_publish = true and b.deleted_at IS NULL
         ORDER BY b.created_at DESC
         LIMIT $1 OFFSET $2
       `,
@@ -64,20 +57,13 @@ export const findOne = async (req, res, next) => {
     const { rows } = await pool.query(
       `
         SELECT
-          b.title,
-          b.slug,
-          b.content,
-          b.short_content,
-          b.thumbnail_url,
-          b.created_at,
-          b.updated_at,
-          b.is_publish,
+          b.*,
           c.label AS category,
-          u.full_name AS author_name
+          u.full_name AS author
         FROM blog b
-        JOIN categories c ON c.code = b.category_id
+        JOIN categories c ON c.id = b.category_id
         JOIN users u ON u.id = b.author_id
-        WHERE slug = $1 AND is_publish = true
+        WHERE slug = $1 AND is_publish = true AND deleted_at IS NULL
       `,
       [id],
     );
@@ -90,28 +76,20 @@ export const findOne = async (req, res, next) => {
 
 export const create = async (req, res, next) => {
   try {
-    const {
-      title,
-      content,
-      shortContent,
-      thumbnailUrl,
-      categoryId,
-      isPublish = false,
-    } = req.body;
-
+    const data = req.body;
     const { rows } = await pool.query(
       `INSERT INTO blog (
         title, slug, content, short_content, thumbnail_url, category_id, author_id, is_publish
       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
       [
-        title,
-        makeSlug(title),
-        content,
-        shortContent,
-        thumbnailUrl,
-        categoryId,
+        data.title,
+        makeSlug(data.title),
+        data.content,
+        data.shortContent,
+        data.thumbnailUrl,
+        data.categoryId,
         req.user.id,
-        isPublish,
+        data.isPublish ?? true,
       ],
     );
 
@@ -139,7 +117,7 @@ export const update = async (req, res, next) => {
       .join(", ");
 
     const { rows } = await pool.query(
-      `UPDATE blog SET ${setQuery}, updated_at = NOW() WHERE id = $${fields.length + 1} RETURNING *`,
+      `UPDATE blog SET ${setQuery} WHERE id = $${fields.length + 1} RETURNING *`,
       [...values, id],
     );
 
@@ -162,8 +140,10 @@ export const update = async (req, res, next) => {
 export const remove = async (req, res, next) => {
   try {
     const { id } = req.params;
-    await pool.query("DELETE FROM blog WHERE id = $1", [id]);
-    successResp(res, null, "Blog deleted successfully");
+
+    await pool.query(`UPDATE blog SET deleted_at = NOW() WHERE id = $1`, [id]);
+
+    successResp(res, null, "Blog deleted");
   } catch (err) {
     next(err);
   }
