@@ -2,7 +2,7 @@ services:
   aldorar-api-prod:
     build: 
       context: .
-      target: production
+      target: prod
       dockerfile: Dockerfile
     container_name: aldorar-api-prod
     image: aldorar-api:prod
@@ -17,7 +17,7 @@ services:
   aldorar-api-dev:
     build: 
       context: .
-      target: development
+      target: dev
       dockerfile: Dockerfile
     container_name: aldorar-api-dev
     image: aldorar-api:dev
