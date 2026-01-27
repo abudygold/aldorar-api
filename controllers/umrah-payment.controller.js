@@ -76,20 +76,15 @@ export const findOne = async (req, res, next) => {
 
 export const create = async (req, res, next) => {
   try {
-    const payload = toSnakeCase(req.body);
-    const fields = Object.keys(payload);
-    const values = Object.values(payload);
-
-    const columns = fields.join(", ");
-    const placeholders = fields.map((_, i) => `$${i + 1}`).join(", ");
+    const { umrahTransactionId, paymentCode, provider, method, amount } =
+      req.body;
 
     const { rows } = await pool.query(
-      `
-        INSERT INTO umrah_payments (${columns})
-        VALUES (${placeholders})
-        RETURNING *
-      `,
-      values,
+      `INSERT INTO umrah_payments
+      (umrah_transaction_id, payment_code, provider, method, amount)
+      VALUES ($1,$2,$3,$4,$5)
+      RETURNING *`,
+      [umrahTransactionId, paymentCode, provider, method, amount],
     );
 
     successResp(res, toCamelCase(rows[0]), "Payment created");
@@ -102,25 +97,30 @@ export const update = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const payload = toSnakeCase(req.body);
-    const fields = Object.keys(payload);
-    const values = Object.values(payload);
+    const fields = Object.keys(req.body);
+    const values = Object.values(req.body);
 
-    const setQuery = fields.map((f, i) => `${f} = $${i + 1}`).join(", ");
+    const setQuery = fields
+      .map((f, i) => `${toSnakeCase(f)} = $${i + 1}`)
+      .join(", ");
 
     const { rows } = await pool.query(
       `
-        UPDATE umrah_payments
-        SET ${setQuery}
-        WHERE id = $${fields.length + 1}
-          AND deleted_at IS NULL
-        RETURNING *
-      `,
+        UPDATE umrah_payments 
+        SET ${setQuery} 
+        WHERE id = $${fields.length + 1} AND deleted_at IS NULL 
+        RETURNING *`,
       [...values, id],
     );
 
     if (!rows.length) {
-      return errorResp(res, "Not found", "NOT_FOUND", 404);
+      return errorResp(
+        res,
+        "Not Found",
+        "NOT_FOUND",
+        404,
+        "Payment not found or cannot be updated",
+      );
     }
 
     successResp(res, toCamelCase(rows[0]), "Payment updated");

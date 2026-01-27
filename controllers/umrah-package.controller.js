@@ -2,6 +2,7 @@ import { pool } from "../config/db.js";
 import { toCamelCase } from "../utils/camelcase.js";
 import { toSnakeCase } from "../utils/snakecase.js";
 import { successResp, errorResp } from "../utils/response.js";
+import { makeSlug } from "../utils/make-slug.js";
 
 export const findAll = async (req, res, next) => {
   try {
@@ -25,7 +26,7 @@ export const findAll = async (req, res, next) => {
     const { rows } = await pool.query(
       `
         SELECT * FROM umrah_package
-        WHERE is_publish = true AND is_available = true AND deleted_at IS NULL 
+        WHERE is_publish = true AND deleted_at IS NULL 
         ORDER BY departure_date ASC
         LIMIT $1 OFFSET $2
       `,
@@ -73,13 +74,13 @@ export const create = async (req, res, next) => {
         INSERT INTO umrah_package
         (title, slug, umrah_type, departure_date, duration_days, quota, airline, 
         flight_type, landing_city, madinah_hotel_name, madinah_hotel_star, mekkah_hotel_name, 
-        mekkah_hotel_star, is_plus_thaif, is_high_speed_train, is_available, is_publish)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+        mekkah_hotel_star, is_plus_thaif, is_high_speed_train, is_publish)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
         RETURNING *
       `,
       [
         data.title,
-        data.slug,
+        makeSlug(data.title),
         data.umrahType,
         data.departureDate,
         data.durationDays,
@@ -93,7 +94,6 @@ export const create = async (req, res, next) => {
         data.mekkahHotelStar,
         data.isPlusThaif,
         data.isHighSpeedTrain,
-        data.isAvailable ?? true,
         data.isPublish ?? true,
       ],
     );
@@ -107,9 +107,15 @@ export const create = async (req, res, next) => {
 export const update = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const updateData = { ...req.body };
 
-    const fields = Object.keys(req.body);
-    const values = Object.values(req.body);
+    // 🔥 Auto-generate slug if title is updated
+    if (updateData.title) {
+      updateData.slug = makeSlug(updateData.title);
+    }
+
+    const fields = Object.keys(updateData);
+    const values = Object.values(updateData);
 
     const setQuery = fields
       .map((f, i) => `${toSnakeCase(f)} = $${i + 1}`)
@@ -119,8 +125,7 @@ export const update = async (req, res, next) => {
       `
         UPDATE umrah_package
         SET ${setQuery}
-        WHERE id = $${fields.length + 1}
-          AND deleted_at IS NULL
+        WHERE id = $${fields.length + 1} AND deleted_at IS NULL
         RETURNING *
       `,
       [...values, id],

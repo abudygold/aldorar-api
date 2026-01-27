@@ -12,7 +12,9 @@ export const findAll = async (req, res, next) => {
 
     // 1️⃣ Get total count
     const countResult = await pool.query(`
-      SELECT COUNT(*)::int AS total FROM blog WHERE is_publish = true
+      SELECT COUNT(*)::int AS total 
+      FROM blog 
+      WHERE is_publish = true AND deleted_at IS NULL
     `);
 
     const total = countResult.rows[0].total;
@@ -28,7 +30,7 @@ export const findAll = async (req, res, next) => {
         FROM blog b
         JOIN categories c ON c.id = b.category_id
         JOIN users u ON u.id = b.author_id
-        WHERE b.is_publish = true and b.deleted_at IS NULL
+        WHERE b.is_publish = true AND b.deleted_at IS NULL
         ORDER BY b.created_at DESC
         LIMIT $1 OFFSET $2
       `,
@@ -55,7 +57,7 @@ export const findOne = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { rows } = await pool.query(
-      `
+      ` 
         SELECT
           b.*,
           c.label AS category,
@@ -63,7 +65,7 @@ export const findOne = async (req, res, next) => {
         FROM blog b
         JOIN categories c ON c.id = b.category_id
         JOIN users u ON u.id = b.author_id
-        WHERE slug = $1 AND is_publish = true AND deleted_at IS NULL
+        WHERE b.slug = $1 AND b.is_publish = true AND b.deleted_at IS NULL
       `,
       [id],
     );
@@ -141,7 +143,12 @@ export const remove = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    await pool.query(`UPDATE blog SET deleted_at = NOW() WHERE id = $1`, [id]);
+    await pool.query(
+      `
+      UPDATE blog SET deleted_at = NOW() 
+      WHERE id = $1 AND deleted_at IS NULL`,
+      [id],
+    );
 
     successResp(res, null, "Blog deleted");
   } catch (err) {

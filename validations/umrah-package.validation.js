@@ -8,9 +8,8 @@ const hotelStarSchema = z.number().int().min(1).max(5);
 /* CREATE SCHEMA */
 export const createSchema = z.object({
   title: z.string().min(3).max(150),
-  slug: z.string().min(3).max(160),
 
-  umrahType: umrahTypeEnum.default("regular"),
+  umrahType: umrahTypeEnum,
   departureDate: z.coerce.date(),
   durationDays: z.number().int().positive(),
   quota: z.number().int(),
@@ -24,9 +23,8 @@ export const createSchema = z.object({
   mekkahHotelName: z.string().min(2).max(150),
   mekkahHotelStar: hotelStarSchema,
 
-  isPlusThaif: z.boolean().default(false),
-  isHighSpeedTrain: z.boolean().default(false),
-  isAvailable: z.boolean().optional(),
+  isPlusThaif: z.boolean(),
+  isHighSpeedTrain: z.boolean(),
   isPublish: z.boolean().optional(),
 });
 

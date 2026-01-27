@@ -11,7 +11,8 @@ export const findAll = async (req, res, next) => {
 
     // 1️⃣ Get total count
     const countResult = await pool.query(`
-      SELECT COUNT(*)::int AS total FROM categories
+      SELECT COUNT(*)::int AS total FROM categories 
+      WHERE deleted_at IS NULL
     `);
 
     const total = countResult.rows[0].total;
@@ -19,7 +20,10 @@ export const findAll = async (req, res, next) => {
 
     // 2️⃣ Get paginated data
     const { rows } = await pool.query(
-      `SELECT * FROM categories ORDER BY created_at DESC LIMIT $1 OFFSET $2`,
+      `SELECT * FROM categories 
+      WHERE deleted_at IS NULL 
+      ORDER BY created_at DESC 
+      LIMIT $1 OFFSET $2`,
       [limit, offset],
     );
 
@@ -43,7 +47,8 @@ export const findOne = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { rows } = await pool.query(
-      `SELECT * FROM categories WHERE id = $1`,
+      `SELECT * FROM categories 
+      WHERE id = $1 AND deleted_at IS NULL`,
       [id],
     );
 
@@ -102,9 +107,12 @@ export const remove = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    await pool.query(`UPDATE categories SET deleted_at = NOW() WHERE id = $1`, [
-      id,
-    ]);
+    await pool.query(
+      `
+      UPDATE categories SET deleted_at = NOW() 
+      WHERE id = $1 AND deleted_at IS NULL`,
+      [id],
+    );
 
     successResp(res, null, "Category deleted successfully");
   } catch (err) {

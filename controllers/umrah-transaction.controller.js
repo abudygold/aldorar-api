@@ -1,13 +1,13 @@
 import { pool } from "../config/db.js";
 import { toCamelCase } from "../utils/camelcase.js";
 import { successResp, errorResp } from "../utils/response.js";
+import { toSnakeCase } from "../utils/snakecase.js";
 
 /**
  * LIST TRANSACTIONS (by logged-in user)
  */
 export const findAll = async (req, res, next) => {
   try {
-    const userId = req.user.id;
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
     const limit = Math.min(parseInt(req.query.limit, 10) || 10, 100); // max 100
     const offset = (page - 1) * limit;
@@ -15,7 +15,7 @@ export const findAll = async (req, res, next) => {
     // 1️⃣ Get total count
     const countResult = await pool.query(`
       SELECT COUNT(*)::int AS total FROM umrah_transactions 
-      WHERE t.user_id = $1 AND t.deleted_at IS NULL
+      WHERE deleted_at IS NULL
     `);
 
     const total = countResult.rows[0].total;
@@ -23,17 +23,17 @@ export const findAll = async (req, res, next) => {
 
     const { rows } = await pool.query(
       `
-        SELECT
-            t.*,
-            p.title AS package_title,
-            p.departure_date
+        SELECT 
+          t.*,
+          p.title AS package_name,
+          p.departure_date 
         FROM umrah_transactions t
-        JOIN umrah_package p ON p.id = t.umrah_package_id
-        WHERE t.user_id = $1 AND t.deleted_at IS NULL
+        JOIN umrah_package p ON p.id = t.umrah_package_id 
+        WHERE t.deleted_at IS NULL
         ORDER BY t.created_at DESC
         LIMIT $1 OFFSET $2
       `,
-      [userId, limit, offset],
+      [limit, offset],
     );
 
     successResp(res, {
@@ -58,17 +58,40 @@ export const findAll = async (req, res, next) => {
 export const findOne = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const userId = req.user.id;
 
     const { rows } = await pool.query(
       `
-      SELECT *
-      FROM umrah_transactions
-      WHERE id = $1
-        AND user_id = $2
-        AND deleted_at IS NULL
+        SELECT
+            t.*,
+            json_build_object(
+              'title', p.title,
+              'slug', p.slug,
+              'umrahType', p.umrah_type,
+              'departureDate', p.departure_date,
+              'durationDays', p.duration_days,
+              'quota', p.quota,
+              'quotaUsed', p.quota_used,
+              'airline', p.airline,
+              'flightType', p.flight_type,
+              'landingCity', p.landing_city,
+              'madinahHotelName', p.madinah_hotel_name,
+              'madinahHotelStar', p.madinah_hotel_star,
+              'mekkahHotelName', p.mekkah_hotel_name,
+              'mekkahHotelStar', p.mekkah_hotel_star
+            ) AS umrah_package,
+            json_build_object(
+              'firstName', u.first_name,
+              'lastName', u.last_name,
+              'fullName', u.full_name,
+              'email', u.email,
+              'phone', u.phone
+            ) AS client
+        FROM umrah_transactions t
+        JOIN umrah_package p ON p.id = t.umrah_package_id 
+        JOIN users u ON u.id = t.user_id
+        WHERE t.id = $1 AND t.deleted_at IS NULL
       `,
-      [id, userId],
+      [id],
     );
 
     if (!rows.length) {
@@ -129,19 +152,21 @@ export const create = async (req, res, next) => {
 export const update = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const userId = req.user.id;
-    const { status } = req.body;
+
+    const fields = Object.keys(req.body);
+    const values = Object.values(req.body);
+
+    const setQuery = fields
+      .map((f, i) => `${toSnakeCase(f)} = $${i + 1}`)
+      .join(", ");
 
     const { rows } = await pool.query(
       `
-      UPDATE umrah_transactions
-      SET status = $1
-      WHERE id = $2
-        AND user_id = $3
-        AND deleted_at IS NULL
-      RETURNING *
-      `,
-      [status, id, userId],
+        UPDATE umrah_transactions 
+        SET ${setQuery} 
+        WHERE id = $${fields.length + 1} AND deleted_at IS NULL 
+        RETURNING *`,
+      [...values, id],
     );
 
     if (!rows.length) {
