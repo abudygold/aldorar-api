@@ -25,6 +25,7 @@ export const findAll = async (req, res, next) => {
       `
         SELECT
           b.title,
+          b.slug,
           b.short_content,
           b.thumbnail_url,
           b.created_at,
