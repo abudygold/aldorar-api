@@ -3,7 +3,7 @@ services:
     build: 
       context: .
       target: prod
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile-Prod
     container_name: aldorar-api-prod
     image: aldorar-api:prod
     restart: unless-stopped
@@ -18,17 +18,14 @@ services:
     build: 
       context: .
       target: dev
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile-Dev
     container_name: aldorar-api-dev
     image: aldorar-api:dev
     restart: unless-stopped
     env_file:
       - .env
     ports:
-      - "3001:3000"
-    volumes:
-      - .:/app
-      - /app/node_modules
+      - "3001:3001"
     depends_on:
       - postgres
 
