@@ -24,7 +24,10 @@ export const findAll = async (req, res, next) => {
     const { rows } = await pool.query(
       `
         SELECT
-          b.*,
+          b.title,
+          b.short_content,
+          b.thumbnail_url,
+          b.created_at,
           c.label AS category,
           u.full_name AS author
         FROM blog b
@@ -59,7 +62,12 @@ export const findOne = async (req, res, next) => {
     const { rows } = await pool.query(
       ` 
         SELECT
-          b.*,
+          b.title,
+          b.content,
+          b.short_content,
+          b.thumbnail_url,
+          b.created_at,
+          b.updated_at,
           c.label AS category,
           u.full_name AS author
         FROM blog b
