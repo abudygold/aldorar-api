@@ -1,50 +1,151 @@
 import bcrypt from "bcrypt";
 import { pool } from "../config/db.js";
 import { toCamelCase } from "../utils/camelcase.js";
+import { toSnakeCase } from "../utils/snakecase.js";
+import { successResp, errorResp } from "../utils/response.js";
 
-export const createUser = async (req, res) => {
-  const { fullName, email, password, phone, role } = req.body;
+export const findAll = async (req, res, next) => {
+  try {
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(parseInt(req.query.limit, 10) || 10, 100); // max 100
+    const offset = (page - 1) * limit;
 
-  const hash = await bcrypt.hash(password, 10);
+    // 1️⃣ Get total count
+    const countResult = await pool.query(`
+      SELECT COUNT(*)::int AS total FROM users
+    `);
 
-  const { rows } = await pool.query(
-    `INSERT INTO users (full_name, email, password_hash, phone, role)
-     VALUES ($1,$2,$3,$4,$5) RETURNING *`,
-    [fullName, email, hash, phone, role],
-  );
+    const total = countResult.rows[0].total;
+    const totalPages = Math.ceil(total / limit);
 
-  res.json(toCamelCase(rows[0]));
+    // 2️⃣ Get paginated data
+    const { rows } = await pool.query(
+      `
+        SELECT id, first_name, last_name, full_name, email, phone, role, created_at, updated_at 
+        FROM users 
+        WHERE deleted_at IS NULL
+        LIMIT $1 OFFSET $2
+      `,
+      [limit, offset],
+    );
+
+    successResp(res, {
+      rows: toCamelCase(rows),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
 };
 
-export const listUsers = async (_, res) => {
-  const { rows } = await pool.query(
-    "SELECT id, full_name, email, phone, role FROM users",
-  );
-  res.json(toCamelCase(rows));
+export const findOne = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { rows } = await pool.query(
+      `
+        SELECT id, first_name, last_name, full_name, email, phone, role, created_at, updated_at 
+        FROM users 
+        WHERE id = $1 AND deleted_at IS NULL
+      `,
+      [id],
+    );
+
+    if (!rows.length) {
+      return errorResp(res, "Not Found", "NOT_FOUND", 404, "User not found");
+    }
+
+    successResp(res, toCamelCase(rows[0]));
+  } catch (err) {
+    next(err);
+  }
 };
 
-export const getUser = async (req, res) => {
-  const { rows } = await pool.query(
-    "SELECT id, full_name, email, phone, role FROM users WHERE id=$1",
-    [req.params.id],
-  );
-  res.json(toCamelCase(rows[0]));
+export const create = async (req, res, next) => {
+  try {
+    const { firstName, lastName, email, password, phone, role, isActive } =
+      req.body;
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const { rows } = await pool.query(
+      `
+        INSERT INTO users
+        (first_name, last_name, email, password_hash, phone, role, is_active)
+        VALUES ($1,$2,$3,$4,$5,$6,$7)
+        RETURNING id, first_name, last_name, full_name, email, role
+      `,
+      [
+        firstName,
+        lastName,
+        email,
+        passwordHash,
+        phone,
+        role || "customer",
+        isActive || false,
+      ],
+    );
+
+    successResp(res, toCamelCase(rows[0]), "User created successfully");
+  } catch (err) {
+    next(err);
+  }
 };
 
-export const updateUser = async (req, res) => {
-  // example simple update
-  const { fullName, phone } = req.body;
+export const update = async (req, res, next) => {
+  try {
+    const { id } = req.params;
 
-  const { rows } = await pool.query(
-    `UPDATE users SET full_name=$1, phone=$2, updated_at=NOW()
-     WHERE id=$3 RETURNING *`,
-    [fullName, phone, req.params.id],
-  );
+    const fields = Object.keys(req.body);
+    const values = Object.values(req.body);
 
-  res.json(toCamelCase(rows[0]));
+    const setQuery = fields
+      .map((f, i) => `${toSnakeCase(f)} = $${i + 1}`)
+      .join(", ");
+
+    const { rows } = await pool.query(
+      `
+        UPDATE users SET ${setQuery}
+        WHERE id = $${fields.length + 1} AND deleted_at IS NULL
+        RETURNING id, full_name, email, role
+      `,
+      [...values, id],
+    );
+
+    if (!rows.length) {
+      return errorResp(res, "Not Found", "NOT_FOUND", 404, "User not found");
+    }
+
+    successResp(res, toCamelCase(rows[0]), "User updated");
+  } catch (err) {
+    next(err);
+  }
 };
 
-export const deleteUser = async (req, res) => {
-  await pool.query("DELETE FROM users WHERE id=$1", [req.params.id]);
-  res.json({ message: "User deleted" });
+export const remove = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const { rowCount } = await pool.query(
+      `
+        UPDATE users
+        SET deleted_at = NOW()
+        WHERE id = $1 AND deleted_at IS NULL
+      `,
+      [id],
+    );
+
+    if (!rowCount) {
+      return errorResp(res, "Not Found", "NOT_FOUND", 404, "User not found");
+    }
+
+    successResp(res, null, "User deleted successfully");
+  } catch (err) {
+    next(err);
+  }
 };

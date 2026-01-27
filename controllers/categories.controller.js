@@ -55,11 +55,10 @@ export const findOne = async (req, res, next) => {
 
 export const create = async (req, res, next) => {
   try {
-    const { label, code } = req.body;
-
+    const data = req.body;
     const { rows } = await pool.query(
       `INSERT INTO categories (label, code) VALUES ($1,$2) RETURNING *`,
-      [label, code],
+      [data.label, data.code],
     );
 
     successResp(res, toCamelCase(rows[0]), "Category created successfully");
@@ -102,7 +101,11 @@ export const update = async (req, res, next) => {
 export const remove = async (req, res, next) => {
   try {
     const { id } = req.params;
-    await pool.query("DELETE FROM categories WHERE id = $1", [id]);
+
+    await pool.query(`UPDATE categories SET deleted_at = NOW() WHERE id = $1`, [
+      id,
+    ]);
+
     successResp(res, null, "Category deleted successfully");
   } catch (err) {
     next(err);
