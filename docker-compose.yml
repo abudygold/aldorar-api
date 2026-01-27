@@ -3,7 +3,7 @@ services:
     build: 
       context: .
       target: prod
-      dockerfile: Dockerfile-Prod
+      dockerfile: Dockerfile
     container_name: aldorar-api-prod
     image: aldorar-api:prod
     restart: unless-stopped
@@ -18,7 +18,7 @@ services:
     build: 
       context: .
       target: dev
-      dockerfile: Dockerfile-Dev
+      dockerfile: Dockerfile
     container_name: aldorar-api-dev
     image: aldorar-api:dev
     restart: unless-stopped
