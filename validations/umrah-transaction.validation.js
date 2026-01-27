@@ -9,6 +9,7 @@ export const createSchema = z.object({
 export const updateSchema = z
   .object({
     status: z.enum(["pending", "paid", "confirmed", "canceled"]).optional(),
+    jamaahCount: z.number().int().positive().optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: "At least one field must be updated",

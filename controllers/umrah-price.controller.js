@@ -17,7 +17,7 @@ export const findAll = async (req, res, next) => {
 
     // 1️⃣ Get total count
     const countResult = await pool.query(
-      `SELECT COUNT(*)::int AS total FROM umrah_package_prices`,
+      `SELECT COUNT(*)::int AS total FROM umrah_prices`,
     );
 
     const total = countResult.rows[0].total;
@@ -37,13 +37,13 @@ export const findAll = async (req, res, next) => {
         SELECT
           upp.*,
           up.title AS package_title
-        FROM umrah_package_prices upp
+        FROM umrah_prices upp
         JOIN umrah_package up ON up.id = upp.umrah_package_id
         ${where}
         ORDER BY upp.created_at DESC
         LIMIT $1 OFFSET $2
       `,
-      [values, limit, offset],
+      [...values, limit, offset],
     );
 
     successResp(
@@ -75,12 +75,12 @@ export const findOne = async (req, res, next) => {
 
     const { rows } = await pool.query(
       `
-      SELECT
-        upp.*,
-        up.title AS package_title
-      FROM umrah_package_prices upp
-      JOIN umrah_package up ON up.id = upp.umrah_package_id
-      WHERE upp.id = $1
+        SELECT
+          upp.*,
+          up.title AS package_title
+        FROM umrah_prices upp
+        JOIN umrah_package up ON up.id = upp.umrah_package_id
+        WHERE upp.id = $1
       `,
       [id],
     );
@@ -110,7 +110,7 @@ export const create = async (req, res, next) => {
 
     const { rows } = await pool.query(
       `
-      INSERT INTO umrah_package_prices
+      INSERT INTO umrah_prices
         (umrah_package_id, room_type, price)
       VALUES ($1,$2,$3)
       RETURNING *
@@ -150,7 +150,7 @@ export const update = async (req, res, next) => {
 
     const { rows } = await pool.query(
       `
-      UPDATE umrah_package_prices
+      UPDATE umrah_prices
       SET ${setQuery}
       WHERE id = $${fields.length + 1}
       RETURNING *
@@ -181,10 +181,9 @@ export const remove = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const result = await pool.query(
-      `DELETE FROM umrah_package_prices WHERE id = $1`,
-      [id],
-    );
+    const result = await pool.query(`DELETE FROM umrah_prices WHERE id = $1`, [
+      id,
+    ]);
 
     if (!result.rowCount) {
       return errorResp(

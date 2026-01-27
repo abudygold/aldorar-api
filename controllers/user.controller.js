@@ -23,7 +23,6 @@ export const findAll = async (req, res, next) => {
       `
         SELECT id, first_name, last_name, full_name, email, phone, role, created_at, updated_at 
         FROM users 
-        WHERE deleted_at IS NULL
         LIMIT $1 OFFSET $2
       `,
       [limit, offset],
@@ -52,7 +51,7 @@ export const findOne = async (req, res, next) => {
       `
         SELECT id, first_name, last_name, full_name, email, phone, role, created_at, updated_at 
         FROM users 
-        WHERE id = $1 AND deleted_at IS NULL
+        WHERE id = $1
       `,
       [id],
     );

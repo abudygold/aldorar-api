@@ -8,6 +8,7 @@ import umrahPackageRoutes from "./routes/umrah-package.routes.js";
 import umrahPriceRoutes from "./routes/umrah-price.routes.js";
 import umrahTransactionRoutes from "./routes/umrah-transaction.routes.js";
 import umrahPaymentRoutes from "./routes/umrah-payment.routes.js";
+import umrahJamaahRoutes from "./routes/umrah-jamaah.routes.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import slowDown from "express-slow-down";
 
@@ -39,5 +40,6 @@ app.use("/umrah-package", umrahPackageRoutes);
 app.use("/umrah-price", umrahPriceRoutes);
 app.use("/umrah-transaction", umrahTransactionRoutes);
 app.use("/umrah-payment", umrahPaymentRoutes);
+app.use("/umrah-jamaah", umrahJamaahRoutes);
 
 export default app;
