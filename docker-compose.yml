@@ -7,11 +7,22 @@ services:
       dockerfile: Dockerfile.prod
     ports:
       - "3000:3000"
+    env_file:
+      - prod/.env
     environment:
       NODE_ENV: production
     restart: always
     depends_on:
       - postgres
+
+  postgres-prod:
+    image: postgres:16-alpine
+    container_name: postgres_prod
+    restart: unless-stopped
+    env_file:
+      - prod/.env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
 
   api-dev:
     container_name: aldorar-api-dev
@@ -21,21 +32,66 @@ services:
       dockerfile: Dockerfile.dev
     ports:
       - "3001:3000"
+    env_file:
+      - dev/.env
     environment:
       NODE_ENV: development
     restart: always
     depends_on:
       - postgres
 
-  postgres:
+  postgres-dev:
     image: postgres:16-alpine
-    container_name: postgres_db
+    container_name: postgres_dev
     restart: unless-stopped
     env_file:
-      - .env
+      - dev/.env
     volumes:
       - pgdata:/var/lib/postgresql/data
 
 volumes:
   pgdata:
+
+#     services:
+#   aldorar-api-prod:
+#     build: 
+#       context: .
+#       target: prod
+#       dockerfile: Dockerfile
+#     container_name: aldorar-api-prod
+#     image: aldorar-api:prod
+#     restart: unless-stopped
+#     env_file:
+#       - .env
+#     ports:
+#       - "3000:3000"
+#     depends_on:
+#       - postgres
+      
+#   aldorar-api-dev:
+#     build: 
+#       context: .
+#       target: dev
+#       dockerfile: Dockerfile
+#     container_name: aldorar-api-dev
+#     image: aldorar-api:dev
+#     restart: unless-stopped
+#     env_file:
+#       - .env
+#     ports:
+#       - "3001:3001"
+#     depends_on:
+#       - postgres
+
+#   postgres:
+#     image: postgres:16-alpine
+#     container_name: postgres_db
+#     restart: unless-stopped
+#     env_file:
+#       - .env
+#     volumes:
+#       - pgdata:/var/lib/postgresql/data
+
+# volumes:
+#   pgdata:
 
