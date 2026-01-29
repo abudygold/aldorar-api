@@ -1,31 +1,29 @@
 services:
-  aldorar-api-prod:
-    build: 
-      context: .
-      target: prod
-      dockerfile: Dockerfile
+  api-prod:
     container_name: aldorar-api-prod
     image: aldorar-api:prod
-    restart: unless-stopped
-    env_file:
-      - .env
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
     ports:
       - "3000:3000"
+    environment:
+      NODE_ENV: production
+    restart: always
     depends_on:
       - postgres
-      
-  aldorar-api-dev:
-    build: 
-      context: .
-      target: dev
-      dockerfile: Dockerfile
+
+  api-dev:
     container_name: aldorar-api-dev
     image: aldorar-api:dev
-    restart: unless-stopped
-    env_file:
-      - .env
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
     ports:
-      - "3001:3001"
+      - "3001:3000"
+    environment:
+      NODE_ENV: development
+    restart: always
     depends_on:
       - postgres
 
@@ -40,3 +38,4 @@ services:
 
 volumes:
   pgdata:
+
