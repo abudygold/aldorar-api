@@ -27,14 +27,38 @@ jobs:
       # ==============================
       # Upload Docker files
       # ==============================
-      - name: Upload Docker configs
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          source: Dockerfile.dev,Dockerfile.prod,docker-compose.yml
-          target: ${{ env.TARGET }}
+      - name: Upload Docker configs 
+        uses: appleboy/scp-action@v0.1.7 
+        with: 
+          host: ${{ secrets.VPS_HOST }} 
+          username: ${{ secrets.VPS_USER }} 
+          key: ${{ secrets.VPS_SSH_KEY }} 
+          source: docker-compose.yml
+          target: ${{ secrets.VPS_BASE_PATH }}
+
+      # ==============================
+      # Upload Dockerfile.dev
+      # ==============================
+      - name: Upload Dockerfile.dev 
+        uses: appleboy/scp-action@v0.1.7 
+        with: 
+          host: ${{ secrets.VPS_HOST }} 
+          username: ${{ secrets.VPS_USER }} 
+          key: ${{ secrets.VPS_SSH_KEY }} 
+          source: 'Dockerfile.dev' 
+          target: ${{ secrets.VPS_BASE_PATH }}
+
+      # ==============================
+      # Upload Dockerfile.prod
+      # ==============================
+      - name: Upload Dockerfile.prod 
+        uses: appleboy/scp-action@v0.1.7 
+        with: 
+          host: ${{ secrets.VPS_HOST }} 
+          username: ${{ secrets.VPS_USER }} 
+          key: ${{ secrets.VPS_SSH_KEY }} 
+          source: 'Dockerfile.prod' 
+          target: ${{ secrets.VPS_BASE_PATH }}
 
       # ==============================
       # Upload ExpressJS application
