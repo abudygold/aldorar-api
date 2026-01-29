@@ -1,50 +1,81 @@
-# Created by Abdullah Umar Babsel
-
-name: Deploy Express App
+name: Deploy Aldorar API
 
 on:
   push:
-    branches:
-      - main
-      - dev
+    branches: [dev, main]
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      # ==============================
+      # Determine target environment
+      # ==============================
+      - name: Set deployment path
+        id: env
+        run: |
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            echo "TARGET=${{ secrets.VPS_PATH_PROD }}" >> $GITHUB_ENV
+          else
+            echo "TARGET=${{ secrets.VPS_PATH_DEV }}" >> $GITHUB_ENV
+          fi
 
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@master
+      # ==============================
+      # Upload Docker files
+      # ==============================
+      - name: Upload Docker configs
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: Dockerfile.dev,Dockerfile.prod,docker-compose.yml
+          target: ${{ env.TARGET }}
+
+      # ==============================
+      # Upload ExpressJS application
+      # ==============================
+      - name: Upload ExpressJS app
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: .
+          target: ${{ env.TARGET }}
+          exclude: |
+            node_modules
+            Dockerfile.dev
+            Dockerfile.prod
+            docker-compose.yml
+            .env
+
+      # ==============================
+      # Build & restart Docker
+      # ==============================
+      - name: Deploy ExpressJS (Docker)
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            echo "🚀 Deploying branch: ${{ github.ref_name }}"
-            
-            # 1. Navigate to the application directory
-            if [ "${{ github.ref_name }}" = "main" ]; then
-              APP_PATH="${{ secrets.VPS_PATH }}"
-            else
-              APP_PATH="${{ secrets.VPS_PATH_DEV }}"
-            fi
+            cd ${{ env.TARGET }}
 
-            cd $APP_PATH
-            # cd ${{ secrets.VPS_PATH }}
+            echo "🔄 Updating source from Git"
 
-            # 2. Pull the latest code
-            # git pull origin main
+            git reset --hard
+            git clean -fd
+            git checkout ${{ github.ref_name }}
             git pull origin ${{ github.ref_name }}
 
-            # 3. Rebuild and restart the containers
-            # --build ensures the Dockerfile is re-processed with new code
-            docker compose up -d --build --force-recreate
+            echo "🚀 Restart Docker"
+            docker compose down
 
-            # 4. Cleanup old unused images to save VPS space
+            echo "🚀 Deploying to ${{ env.TARGET }}"
+            docker compose up -d --build
             docker image prune -f
