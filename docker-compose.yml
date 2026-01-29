@@ -13,7 +13,7 @@ services:
       NODE_ENV: production
     restart: always
     depends_on:
-      - postgres
+      - postgres-prod
 
   postgres-prod:
     image: postgres:16-alpine
@@ -38,7 +38,7 @@ services:
       NODE_ENV: development
     restart: always
     depends_on:
-      - postgres
+      - postgres-dev
 
   postgres-dev:
     image: postgres:16-alpine
