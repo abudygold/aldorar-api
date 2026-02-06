@@ -14,7 +14,7 @@ export const findAll = async (req, res, next) => {
     const countResult = await pool.query(
       `
         SELECT COUNT(*)::int AS total
-        FROM umrah_package
+        FROM trip_package
         WHERE is_publish = true AND deleted_at IS NULL
       `,
     );
@@ -25,7 +25,7 @@ export const findAll = async (req, res, next) => {
     // 2️⃣ Get paginated data
     const { rows } = await pool.query(
       `
-        SELECT * FROM umrah_package
+        SELECT * FROM trip_package
         WHERE is_publish = true AND deleted_at IS NULL 
         ORDER BY departure_date ASC
         LIMIT $1 OFFSET $2
@@ -55,9 +55,11 @@ export const findAll = async (req, res, next) => {
 
 export const findOne = async (req, res, next) => {
   try {
+    const { id } = req.params;
+
     const { rows } = await pool.query(
-      `SELECT * FROM umrah_package WHERE slug = $1`,
-      [req.params.id],
+      `SELECT * FROM trip_package WHERE slug = $1`,
+      [id],
     );
 
     successResp(res, toCamelCase(rows[0]), "Package detail");
@@ -68,34 +70,19 @@ export const findOne = async (req, res, next) => {
 
 export const create = async (req, res, next) => {
   try {
-    const data = req.body;
+    const fields = Object.keys(req.body);
+    const values = Object.values(req.body);
+
+    const setQuery = fields
+      .map((f, i) => `${toSnakeCase(f)} = $${i + 1}`)
+      .join(", ");
+
     const { rows } = await pool.query(
       `
-        INSERT INTO umrah_package
-        (title, slug, umrah_type, departure_date, duration_days, quota, airline, 
-        flight_type, landing_city, madinah_hotel_name, madinah_hotel_star, mekkah_hotel_name, 
-        mekkah_hotel_star, is_plus_thaif, is_high_speed_train, is_publish)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
-        RETURNING *
-      `,
-      [
-        data.title,
-        makeSlug(data.title),
-        data.umrahType,
-        data.departureDate,
-        data.durationDays,
-        data.quota,
-        data.airline,
-        data.flightType,
-        data.landingCity,
-        data.madinahHotelName,
-        data.madinahHotelStar,
-        data.mekkahHotelName,
-        data.mekkahHotelStar,
-        data.isPlusThaif,
-        data.isHighSpeedTrain,
-        data.isPublish ?? true,
-      ],
+        INSERT INTO trip_package (${setQuery}) 
+        VALUES (${fields.length + 1}) 
+        RETURNING *`,
+      [...values],
     );
 
     successResp(res, toCamelCase(rows[0]), "Package created");
@@ -123,7 +110,7 @@ export const update = async (req, res, next) => {
 
     const { rows } = await pool.query(
       `
-        UPDATE umrah_package
+        UPDATE trip_package
         SET ${setQuery}
         WHERE id = $${fields.length + 1} AND deleted_at IS NULL
         RETURNING *
@@ -137,7 +124,7 @@ export const update = async (req, res, next) => {
         "Not found",
         "NOT_FOUND",
         404,
-        `Umrah package with ID ${id} not found`,
+        `Package with ID ${id} not found`,
       );
     }
 
@@ -153,7 +140,7 @@ export const remove = async (req, res, next) => {
 
     const { rowCount } = await pool.query(
       `
-        UPDATE umrah_package
+        UPDATE trip_package
         SET deleted_at = NOW()
         WHERE id = $1 AND deleted_at IS NULL
       `,
@@ -166,7 +153,7 @@ export const remove = async (req, res, next) => {
         "Not found",
         "NOT_FOUND",
         404,
-        `Umrah package with ID ${id} not found`,
+        `Package with ID ${id} not found`,
       );
     }
 

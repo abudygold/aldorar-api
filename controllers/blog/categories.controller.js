@@ -5,35 +5,27 @@ import { successResp, errorResp } from "../utils/response.js";
 
 export const findAll = async (req, res, next) => {
   try {
-    const { transactionId } = req.query;
-    const page = Math.max(parseInt(req.query.page) || 1, 1);
-    const limit = Math.min(parseInt(req.query.limit) || 10, 100);
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(parseInt(req.query.limit, 10) || 10, 100); // max 100
     const offset = (page - 1) * limit;
 
+    // 1️⃣ Get total count
     const countResult = await pool.query(`
-      SELECT COUNT(*)::int AS total
-      FROM umrah_payments
+      SELECT COUNT(*)::int AS total FROM categories 
       WHERE deleted_at IS NULL
     `);
 
-    const params = transactionId ? [transactionId] : [];
-    const where = transactionId
-      ? `WHERE umrah_transaction_id = $1 AND deleted_at IS NULL`
-      : `WHERE deleted_at IS NULL`;
-
-    const { rows } = await pool.query(
-      `
-        SELECT *
-        FROM umrah_payments
-        ${where}
-        ORDER BY created_at DESC
-        LIMIT $1 OFFSET $2
-      `,
-      [limit, offset],
-    );
-
     const total = countResult.rows[0].total;
     const totalPages = Math.ceil(total / limit);
+
+    // 2️⃣ Get paginated data
+    const { rows } = await pool.query(
+      `SELECT * FROM categories 
+      WHERE deleted_at IS NULL 
+      ORDER BY created_at DESC 
+      LIMIT $1 OFFSET $2`,
+      [limit, offset],
+    );
 
     successResp(res, {
       rows: toCamelCase(rows),
@@ -54,19 +46,11 @@ export const findAll = async (req, res, next) => {
 export const findOne = async (req, res, next) => {
   try {
     const { id } = req.params;
-
     const { rows } = await pool.query(
-      `
-        SELECT *
-        FROM umrah_payments
-        WHERE id = $1 AND deleted_at IS NULL
-      `,
+      `SELECT * FROM categories 
+      WHERE id = $1 AND deleted_at IS NULL`,
       [id],
     );
-
-    if (!rows.length) {
-      return errorResp(res, "Not found", "NOT_FOUND", 404);
-    }
 
     successResp(res, toCamelCase(rows[0]));
   } catch (err) {
@@ -76,18 +60,13 @@ export const findOne = async (req, res, next) => {
 
 export const create = async (req, res, next) => {
   try {
-    const { umrahTransactionId, paymentCode, provider, method, amount } =
-      req.body;
-
+    const data = req.body;
     const { rows } = await pool.query(
-      `INSERT INTO umrah_payments
-      (umrah_transaction_id, payment_code, provider, method, amount)
-      VALUES ($1,$2,$3,$4,$5)
-      RETURNING *`,
-      [umrahTransactionId, paymentCode, provider, method, amount],
+      `INSERT INTO categories (label, value, code) VALUES ($1,$2,$3) RETURNING *`,
+      [data.label, data.value, data.code],
     );
 
-    successResp(res, toCamelCase(rows[0]), "Payment created");
+    successResp(res, toCamelCase(rows[0]), "Category created successfully");
   } catch (err) {
     next(err);
   }
@@ -96,7 +75,6 @@ export const create = async (req, res, next) => {
 export const update = async (req, res, next) => {
   try {
     const { id } = req.params;
-
     const fields = Object.keys(req.body);
     const values = Object.values(req.body);
 
@@ -105,25 +83,21 @@ export const update = async (req, res, next) => {
       .join(", ");
 
     const { rows } = await pool.query(
-      `
-        UPDATE umrah_payments 
-        SET ${setQuery} 
-        WHERE id = $${fields.length + 1} AND deleted_at IS NULL 
-        RETURNING *`,
+      `UPDATE categories SET ${setQuery} WHERE id = $${fields.length + 1} RETURNING *`,
       [...values, id],
     );
 
     if (!rows.length) {
       return errorResp(
         res,
-        "Not Found",
-        "NOT_FOUND",
+        "Validation error",
+        "VALIDATION_ERROR",
         404,
-        "Payment not found or cannot be updated",
+        `Category with ID ${id} does not exist`,
       );
     }
 
-    successResp(res, toCamelCase(rows[0]), "Payment updated");
+    successResp(res, toCamelCase(rows[0]), "Category updated");
   } catch (err) {
     next(err);
   }
@@ -135,14 +109,12 @@ export const remove = async (req, res, next) => {
 
     await pool.query(
       `
-      UPDATE umrah_payments
-      SET deleted_at = CURRENT_TIMESTAMP
-      WHERE id = $1
-      `,
+      UPDATE categories SET deleted_at = NOW() 
+      WHERE id = $1 AND deleted_at IS NULL`,
       [id],
     );
 
-    successResp(res, null, "Payment removed");
+    successResp(res, null, "Category deleted successfully");
   } catch (err) {
     next(err);
   }

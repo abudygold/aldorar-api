@@ -2,21 +2,21 @@ import express from "express";
 import cors from "cors";
 import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
-import blogRoutes from "./routes/blog.routes.js";
-import categoriesRoutes from "./routes/categories.routes.js";
-import umrahPackageRoutes from "./routes/umrah-package.routes.js";
-import umrahPriceRoutes from "./routes/umrah-price.routes.js";
-import umrahTransactionRoutes from "./routes/umrah-transaction.routes.js";
-import umrahPaymentRoutes from "./routes/umrah-payment.routes.js";
-import umrahJamaahRoutes from "./routes/umrah-jamaah.routes.js";
+import blogRoutes from "./routes/blog/blog.routes.js";
+import categoriesRoutes from "./routes/blog/categories.routes.js";
+import packageRoutes from "./routes/package/package.routes.js";
+import priceRoutes from "./routes/package/price.routes.js";
+import transactionRoutes from "./routes/package/transaction.routes.js";
+import paymentRoutes from "./routes/package/payment.routes.js";
+import participantRoutes from "./routes/package/participant.routes.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import slowDown from "express-slow-down";
 
 const app = express();
 const speedLimiter = slowDown({
-  windowMs: 15 * 60 * 1000, // 15 menit
-  delayAfter: 100, // setelah 100 request
-  delayMs: () => 500, // tiap request berikutnya delay 500ms
+  windowMs: 1 * 60 * 1000, // 1 menit
+  delayAfter: 5, // setelah 5 request
+  delayMs: () => 100, // tiap request berikutnya delay 100ms
 });
 
 app.use(
@@ -36,10 +36,10 @@ app.use("/auth", authRoutes);
 app.use("/user", userRoutes);
 app.use("/blog", blogRoutes);
 app.use("/categories", categoriesRoutes);
-app.use("/umrah-package", umrahPackageRoutes);
-app.use("/umrah-price", umrahPriceRoutes);
-app.use("/umrah-transaction", umrahTransactionRoutes);
-app.use("/umrah-payment", umrahPaymentRoutes);
-app.use("/umrah-jamaah", umrahJamaahRoutes);
+app.use("/package", packageRoutes);
+app.use("/price", priceRoutes);
+app.use("/transaction", transactionRoutes);
+app.use("/payment", paymentRoutes);
+app.use("/participant", participantRoutes);
 
 export default app;

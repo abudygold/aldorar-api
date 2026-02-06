@@ -4,6 +4,7 @@ const characterSchema = z.string().max(60);
 
 export const createSchema = z.object({
   label: characterSchema,
+  value: characterSchema,
   code: characterSchema,
 });
 
