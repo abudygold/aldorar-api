@@ -16,7 +16,7 @@ services:
       - postgres-prod
 
   postgres-prod:
-    image: postgres:16-alpine
+    image: postgres_prod:16-alpine
     container_name: postgres_prod
     restart: unless-stopped
     env_file:
@@ -41,7 +41,7 @@ services:
       - postgres-dev
 
   postgres-dev:
-    image: postgres:16-alpine
+    image: postgres_dev:16-alpine
     container_name: postgres_dev
     restart: unless-stopped
     env_file:
