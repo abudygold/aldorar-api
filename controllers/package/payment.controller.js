@@ -1,7 +1,7 @@
-import { pool } from "../config/db.js";
-import { toCamelCase } from "../utils/camelcase.js";
-import { toSnakeCase } from "../utils/snakecase.js";
-import { successResp, errorResp } from "../utils/response.js";
+import { pool } from "../../config/db.js";
+import { toCamelCase } from "../../utils/camelcase.js";
+import { toSnakeCase } from "../../utils/snakecase.js";
+import { successResp, errorResp } from "../../utils/response.js";
 
 export const findAll = async (req, res, next) => {
   try {
@@ -10,21 +10,21 @@ export const findAll = async (req, res, next) => {
     const limit = Math.min(parseInt(req.query.limit) || 10, 100);
     const offset = (page - 1) * limit;
 
+    // 1️⃣ Get total count
     const countResult = await pool.query(`
       SELECT COUNT(*)::int AS total
-      FROM umrah_payments
+      FROM trip_payment
       WHERE deleted_at IS NULL
     `);
 
-    const params = transactionId ? [transactionId] : [];
     const where = transactionId
-      ? `WHERE umrah_transaction_id = $1 AND deleted_at IS NULL`
+      ? `WHERE trip_transaction_id = $1 AND deleted_at IS NULL`
       : `WHERE deleted_at IS NULL`;
 
+    // 2️⃣ Get paginated data
     const { rows } = await pool.query(
       `
-        SELECT *
-        FROM umrah_payments
+        SELECT * FROM trip_payment
         ${where}
         ORDER BY created_at DESC
         LIMIT $1 OFFSET $2
@@ -56,11 +56,7 @@ export const findOne = async (req, res, next) => {
     const { id } = req.params;
 
     const { rows } = await pool.query(
-      `
-        SELECT *
-        FROM umrah_payments
-        WHERE id = $1 AND deleted_at IS NULL
-      `,
+      `SELECT * FROM trip_payment WHERE id = $1 AND deleted_at IS NULL`,
       [id],
     );
 
@@ -76,15 +72,19 @@ export const findOne = async (req, res, next) => {
 
 export const create = async (req, res, next) => {
   try {
-    const { umrahTransactionId, paymentCode, provider, method, amount } =
-      req.body;
+    const fields = Object.keys(req.body);
+    const values = Object.values(req.body);
+
+    const setQuery = fields
+      .map((f, i) => `${toSnakeCase(f)} = $${i + 1}`)
+      .join(", ");
 
     const { rows } = await pool.query(
-      `INSERT INTO umrah_payments
-      (umrah_transaction_id, payment_code, provider, method, amount)
-      VALUES ($1,$2,$3,$4,$5)
-      RETURNING *`,
-      [umrahTransactionId, paymentCode, provider, method, amount],
+      `
+        INSERT INTO trip_payment (${setQuery}) 
+        VALUES (${fields.length + 1}) 
+        RETURNING *`,
+      [...values],
     );
 
     successResp(res, toCamelCase(rows[0]), "Payment created");
@@ -106,7 +106,7 @@ export const update = async (req, res, next) => {
 
     const { rows } = await pool.query(
       `
-        UPDATE umrah_payments 
+        UPDATE trip_payment 
         SET ${setQuery} 
         WHERE id = $${fields.length + 1} AND deleted_at IS NULL 
         RETURNING *`,
@@ -135,7 +135,7 @@ export const remove = async (req, res, next) => {
 
     await pool.query(
       `
-      UPDATE umrah_payments
+      UPDATE trip_payment
       SET deleted_at = CURRENT_TIMESTAMP
       WHERE id = $1
       `,

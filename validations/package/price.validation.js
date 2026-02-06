@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const createSchema = z.object({
-  umrahPackageId: z.string().uuid(),
+  tripPackageId: z.string().uuid(),
   roomType: z.enum(["quad", "triple", "double"]),
   price: z.number().positive(),
 });

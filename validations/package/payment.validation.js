@@ -5,7 +5,7 @@ const varchar50 = z.string().max(50);
 const varchar40 = z.string().max(40);
 
 export const createSchema = z.object({
-  umrahTransactionId: uuid,
+  tripTransactionId: uuid,
   paymentCode: varchar40,
   provider: varchar50,
   method: varchar50.optional(),

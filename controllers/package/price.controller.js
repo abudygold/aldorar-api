@@ -1,14 +1,11 @@
-import { pool } from "../config/db.js";
-import { toCamelCase } from "../utils/camelcase.js";
-import { toSnakeCase } from "../utils/snakecase.js";
-import { successResp, errorResp } from "../utils/response.js";
+import { pool } from "../../config/db.js";
+import { toCamelCase } from "../../utils/camelcase.js";
+import { toSnakeCase } from "../../utils/snakecase.js";
+import { successResp, errorResp } from "../../utils/response.js";
 
-/**
- * GET /umrah-price
- */
 export const findAll = async (req, res, next) => {
   try {
-    const { umrahPackageId } = req.query;
+    const { tripPackageId } = req.query;
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
     const limit = Math.min(parseInt(req.query.limit, 10) || 10, 100); // max 100
     const offset = (page - 1) * limit;
@@ -17,15 +14,15 @@ export const findAll = async (req, res, next) => {
 
     // 1️⃣ Get total count
     const countResult = await pool.query(
-      `SELECT COUNT(*)::int AS total FROM umrah_prices`,
+      `SELECT COUNT(*)::int AS total FROM trip_price`,
     );
 
     const total = countResult.rows[0].total;
     const totalPages = Math.ceil(total / limit);
 
-    if (umrahPackageId) {
-      values.push(umrahPackageId);
-      conditions.push(`upp.umrah_package_id = $${values.length}`);
+    if (tripPackageId) {
+      values.push(tripPackageId);
+      conditions.push(`upp.trip_package_id = $${values.length}`);
     }
 
     const where =
@@ -35,12 +32,12 @@ export const findAll = async (req, res, next) => {
     const { rows } = await pool.query(
       `
         SELECT
-          upp.*,
-          up.title AS package_title
-        FROM umrah_prices upp
-        JOIN umrah_package up ON up.id = upp.umrah_package_id
+          tpp.*,
+          tp.title AS package_title
+        FROM trip_price tpp
+        JOIN trip_package tp ON tp.id = tpp.trip_package_id
         ${where}
-        ORDER BY upp.created_at DESC
+        ORDER BY tpp.created_at DESC
         LIMIT $1 OFFSET $2
       `,
       [...values, limit, offset],
@@ -66,9 +63,6 @@ export const findAll = async (req, res, next) => {
   }
 };
 
-/**
- * GET /umrah-price/:id
- */
 export const findOne = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -78,8 +72,8 @@ export const findOne = async (req, res, next) => {
         SELECT
           upp.*,
           up.title AS package_title
-        FROM umrah_prices upp
-        JOIN umrah_package up ON up.id = upp.umrah_package_id
+        FROM trip_price upp
+        JOIN trip_package up ON up.id = upp.trip_package_id
         WHERE upp.id = $1
       `,
       [id],
@@ -101,21 +95,21 @@ export const findOne = async (req, res, next) => {
   }
 };
 
-/**
- * POST /umrah-price
- */
 export const create = async (req, res, next) => {
   try {
-    const { umrahPackageId, roomType, price } = req.body;
+    const fields = Object.keys(req.body);
+    const values = Object.values(req.body);
+
+    const setQuery = fields
+      .map((f, i) => `${toSnakeCase(f)} = $${i + 1}`)
+      .join(", ");
 
     const { rows } = await pool.query(
       `
-      INSERT INTO umrah_prices
-        (umrah_package_id, room_type, price)
-      VALUES ($1,$2,$3)
-      RETURNING *
-      `,
-      [umrahPackageId, roomType, price],
+        INSERT INTO trip_price (${setQuery}) 
+        VALUES (${fields.length + 1}) 
+        RETURNING *`,
+      [...values],
     );
 
     successResp(res, toCamelCase(rows[0]), "Price created successfully");
@@ -134,9 +128,6 @@ export const create = async (req, res, next) => {
   }
 };
 
-/**
- * PUT /umrah-price/:id
- */
 export const update = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -150,10 +141,10 @@ export const update = async (req, res, next) => {
 
     const { rows } = await pool.query(
       `
-      UPDATE umrah_prices
-      SET ${setQuery}
-      WHERE id = $${fields.length + 1}
-      RETURNING *
+        UPDATE trip_price
+        SET ${setQuery}
+        WHERE id = $${fields.length + 1}
+        RETURNING *
       `,
       [...values, id],
     );
@@ -174,14 +165,11 @@ export const update = async (req, res, next) => {
   }
 };
 
-/**
- * DELETE /umrah-price/:id
- */
 export const remove = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const result = await pool.query(`DELETE FROM umrah_prices WHERE id = $1`, [
+    const result = await pool.query(`DELETE FROM trip_price WHERE id = $1`, [
       id,
     ]);
 

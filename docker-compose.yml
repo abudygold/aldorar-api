@@ -51,47 +51,4 @@ services:
 
 volumes:
   pgdata:
-
-#     services:
-#   aldorar-api-prod:
-#     build: 
-#       context: .
-#       target: prod
-#       dockerfile: Dockerfile
-#     container_name: aldorar-api-prod
-#     image: aldorar-api:prod
-#     restart: unless-stopped
-#     env_file:
-#       - .env
-#     ports:
-#       - "3000:3000"
-#     depends_on:
-#       - postgres
-      
-#   aldorar-api-dev:
-#     build: 
-#       context: .
-#       target: dev
-#       dockerfile: Dockerfile
-#     container_name: aldorar-api-dev
-#     image: aldorar-api:dev
-#     restart: unless-stopped
-#     env_file:
-#       - .env
-#     ports:
-#       - "3001:3001"
-#     depends_on:
-#       - postgres
-
-#   postgres:
-#     image: postgres:16-alpine
-#     container_name: postgres_db
-#     restart: unless-stopped
-#     env_file:
-#       - .env
-#     volumes:
-#       - pgdata:/var/lib/postgresql/data
-
-# volumes:
-#   pgdata:
-
+  

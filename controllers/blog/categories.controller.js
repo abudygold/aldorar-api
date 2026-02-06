@@ -1,7 +1,7 @@
-import { pool } from "../config/db.js";
-import { toCamelCase } from "../utils/camelcase.js";
-import { toSnakeCase } from "../utils/snakecase.js";
-import { successResp, errorResp } from "../utils/response.js";
+import { pool } from "../../config/db.js";
+import { toCamelCase } from "../../utils/camelcase.js";
+import { toSnakeCase } from "../../utils/snakecase.js";
+import { successResp, errorResp } from "../../utils/response.js";
 
 export const findAll = async (req, res, next) => {
   try {
@@ -62,8 +62,8 @@ export const create = async (req, res, next) => {
   try {
     const data = req.body;
     const { rows } = await pool.query(
-      `INSERT INTO categories (label, code) VALUES ($1,$2) RETURNING *`,
-      [data.label, data.code],
+      `INSERT INTO categories (label, value, code) VALUES ($1,$2,$3) RETURNING *`,
+      [data.label, data.value, data.code],
     );
 
     successResp(res, toCamelCase(rows[0]), "Category created successfully");

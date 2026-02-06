@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const createSchema = z.object({
-  umrahPackageId: z.string().uuid(),
+  tripPackageId: z.string().uuid(),
   jamaahCount: z.number().int().positive(),
   pricePerPerson: z.number().positive(),
 });

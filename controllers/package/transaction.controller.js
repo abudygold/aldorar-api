@@ -1,11 +1,8 @@
-import { pool } from "../config/db.js";
-import { toCamelCase } from "../utils/camelcase.js";
-import { successResp, errorResp } from "../utils/response.js";
-import { toSnakeCase } from "../utils/snakecase.js";
+import { pool } from "../../config/db.js";
+import { toCamelCase } from "../../utils/camelcase.js";
+import { successResp, errorResp } from "../../utils/response.js";
+import { toSnakeCase } from "../../utils/snakecase.js";
 
-/**
- * LIST TRANSACTIONS (by logged-in user)
- */
 export const findAll = async (req, res, next) => {
   try {
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
@@ -14,7 +11,7 @@ export const findAll = async (req, res, next) => {
 
     // 1️⃣ Get total count
     const countResult = await pool.query(`
-      SELECT COUNT(*)::int AS total FROM umrah_transactions 
+      SELECT COUNT(*)::int AS total FROM trip_transactions 
       WHERE deleted_at IS NULL
     `);
 
@@ -27,8 +24,8 @@ export const findAll = async (req, res, next) => {
           t.*,
           p.title AS package_name,
           p.departure_date 
-        FROM umrah_transactions t
-        JOIN umrah_package p ON p.id = t.umrah_package_id 
+        FROM trip_transactions t
+        JOIN trip_package p ON p.id = t.trip_package_id 
         WHERE t.deleted_at IS NULL
         ORDER BY t.created_at DESC
         LIMIT $1 OFFSET $2
@@ -52,9 +49,6 @@ export const findAll = async (req, res, next) => {
   }
 };
 
-/**
- * GET SINGLE TRANSACTION
- */
 export const findOne = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -66,19 +60,25 @@ export const findOne = async (req, res, next) => {
             json_build_object(
               'title', p.title,
               'slug', p.slug,
-              'umrahType', p.umrah_type,
+              'tripType', p.trip_type,
+              'packageType', p.package_type,
               'departureDate', p.departure_date,
               'durationDays', p.duration_days,
               'quota', p.quota,
               'quotaUsed', p.quota_used,
-              'airline', p.airline,
-              'flightType', p.flight_type,
-              'landingCity', p.landing_city,
+              'departureDate', p.departure_date,
+              'departureAirline', p.departure_airline,
+              'departureFlightType', p.departure_flight_type,
+              'departureLanding', p.departure_landing,
+              'returnDate', p.return_date,
+              'returnAirline', p.return_airline,
+              'returnFlightType', p.return_flight_type,
+              'returnLanding', p.return_landing,
               'madinahHotelName', p.madinah_hotel_name,
               'madinahHotelStar', p.madinah_hotel_star,
               'mekkahHotelName', p.mekkah_hotel_name,
               'mekkahHotelStar', p.mekkah_hotel_star
-            ) AS umrah_package,
+            ) AS trip_package,
             json_build_object(
               'firstName', u.first_name,
               'lastName', u.last_name,
@@ -86,8 +86,8 @@ export const findOne = async (req, res, next) => {
               'email', u.email,
               'phone', u.phone
             ) AS client
-        FROM umrah_transactions t
-        JOIN umrah_package p ON p.id = t.umrah_package_id 
+        FROM trip_transactions t
+        JOIN trip_package p ON p.id = t.trip_package_id 
         JOIN users u ON u.id = t.user_id
         WHERE t.id = $1 AND t.deleted_at IS NULL
       `,
@@ -110,33 +110,24 @@ export const findOne = async (req, res, next) => {
   }
 };
 
-/**
- * CREATE TRANSACTION
- */
 export const create = async (req, res, next) => {
   try {
+    const { jamaahCount, pricePerPerson } = req.body;
     const userId = req.user.id;
-    const { umrahPackageId, jamaahCount, pricePerPerson } = req.body;
-
     const totalPrice = jamaahCount * pricePerPerson;
+    const fields = Object.keys(req.body);
+    const values = Object.values(req.body);
+
+    const setQuery = fields
+      .map((f, i) => `${toSnakeCase(f)} = $${i + 1}`)
+      .join(", ");
 
     const { rows } = await pool.query(
       `
-      INSERT INTO umrah_transactions (
-        transaction_code,
-        umrah_package_id,
-        user_id,
-        jamaah_count,
-        price_per_person,
-        total_price
-      )
-      VALUES (
-        'TRX-' || EXTRACT(EPOCH FROM NOW())::bigint,
-        $1, $2, $3, $4, $5
-      )
-      RETURNING *
-      `,
-      [umrahPackageId, userId, jamaahCount, pricePerPerson, totalPrice],
+        INSERT INTO trip_transaction (${setQuery}, total_price, user_id) 
+        VALUES (${fields.length + 1}) 
+        RETURNING *`,
+      [...values, totalPrice, userId],
     );
 
     successResp(res, toCamelCase(rows[0]), "Transaction created successfully");
@@ -145,10 +136,6 @@ export const create = async (req, res, next) => {
   }
 };
 
-/**
- * UPDATE TRANSACTION STATUS
- * (status divalidasi DB trigger)
- */
 export const update = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -162,7 +149,7 @@ export const update = async (req, res, next) => {
 
     const { rows } = await pool.query(
       `
-        UPDATE umrah_transactions 
+        UPDATE trip_transaction 
         SET ${setQuery} 
         WHERE id = $${fields.length + 1} AND deleted_at IS NULL 
         RETURNING *`,
@@ -195,7 +182,7 @@ export const remove = async (req, res, next) => {
 
     const { rowCount } = await pool.query(
       `
-      UPDATE umrah_transactions
+      UPDATE trip_transaction
       SET deleted_at = NOW()
       WHERE id = $1
         AND user_id = $2

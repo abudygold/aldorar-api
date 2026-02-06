@@ -1,26 +1,35 @@
 import { z } from "zod";
 
 /* Common fields (reusable) */
+const tripTypeEnum = z.enum(["regular", "plus", "private"]);
+const packageTypeEnum = z.enum(["umrah", "hajj", "trip"]);
 const flightTypeEnum = z.enum(["direct", "transit"]);
-const umrahTypeEnum = z.enum(["regular", "plus", "private"]);
+const stringMinMax = z.string().min(2).max(150);
+const filghtDate = z.coerce.date();
 const hotelStarSchema = z.number().int().min(1).max(5);
 
 /* CREATE SCHEMA */
 export const createSchema = z.object({
-  title: z.string().min(3).max(150),
+  title: stringMinMax,
 
-  umrahType: umrahTypeEnum,
-  departureDate: z.coerce.date(),
+  packageType: packageTypeEnum,
+  tripType: tripTypeEnum,
   durationDays: z.number().int().positive(),
   quota: z.number().int(),
 
-  airline: z.string().min(2).max(100),
-  flightType: flightTypeEnum,
-  landingCity: z.string().min(2).max(100),
+  departureDate: filghtDate,
+  departureAirline: stringMinMax,
+  departureFlightType: flightTypeEnum,
+  departureLanding: stringMinMax,
 
-  madinahHotelName: z.string().min(2).max(150),
+  returnDate: filghtDate,
+  returnAirline: stringMinMax,
+  returnFlightType: flightTypeEnum,
+  returnLanding: stringMinMax,
+
+  madinahHotelName: stringMinMax,
   madinahHotelStar: hotelStarSchema,
-  mekkahHotelName: z.string().min(2).max(150),
+  mekkahHotelName: stringMinMax,
   mekkahHotelStar: hotelStarSchema,
 
   isPlusThaif: z.boolean(),
