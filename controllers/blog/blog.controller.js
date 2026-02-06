@@ -1,8 +1,8 @@
-import { pool } from "../config/db.js";
-import { toCamelCase } from "../utils/camelcase.js";
-import { toSnakeCase } from "../utils/snakecase.js";
-import { successResp, errorResp } from "../utils/response.js";
-import { makeSlug } from "../utils/make-slug.js";
+import { pool } from "../../config/db.js";
+import { toCamelCase } from "../../utils/camelcase.js";
+import { toSnakeCase } from "../../utils/snakecase.js";
+import { successResp, errorResp } from "../../utils/response.js";
+import { makeSlug } from "../../utils/make-slug.js";
 
 export const findAll = async (req, res, next) => {
   try {

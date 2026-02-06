@@ -6,6 +6,7 @@ const packageTypeEnum = z.enum(["umrah", "hajj", "trip"]);
 const flightTypeEnum = z.enum(["direct", "transit"]);
 const stringMinMax = z.string().min(2).max(150);
 const filghtDate = z.coerce.date();
+const hotelStarSchema = z.number().int().min(1).max(5);
 
 /* CREATE SCHEMA */
 export const createSchema = z.object({

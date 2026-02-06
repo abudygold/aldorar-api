@@ -6,12 +6,12 @@ import { createSchema, updateSchema } from "../validations/user.validation.js";
 
 const router = express.Router();
 
+router.post("/", validate(createSchema), ctrl.create);
 router.use(auth);
 
 // PROTECTED
 router.get("/", ctrl.findAll);
 router.get("/:id", ctrl.findOne);
-router.post("/", validate(createSchema), ctrl.create);
 router.put("/:id", validate(updateSchema), ctrl.update);
 router.delete("/:id", ctrl.remove);
 
