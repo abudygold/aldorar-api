@@ -9,6 +9,7 @@ import priceRoutes from "./routes/package/price.routes.js";
 import transactionRoutes from "./routes/package/transaction.routes.js";
 import paymentRoutes from "./routes/package/payment.routes.js";
 import participantRoutes from "./routes/package/participant.routes.js";
+import uploadRoutes from "./routes/upload.routes.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import slowDown from "express-slow-down";
 
@@ -41,5 +42,6 @@ app.use("/price", priceRoutes);
 app.use("/transaction", transactionRoutes);
 app.use("/payment", paymentRoutes);
 app.use("/participant", participantRoutes);
+app.use("/upload", uploadRoutes);
 
 export default app;
