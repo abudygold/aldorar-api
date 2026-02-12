@@ -95,13 +95,7 @@ export const findOne = async (req, res, next) => {
     );
 
     if (!rows.length) {
-      return errorResp(
-        res,
-        "Not Found",
-        "NOT_FOUND",
-        404,
-        "Transaction not found",
-      );
+      return errorResp(res, "Transaction not found", "NOT_FOUND", 404);
     }
 
     successResp(res, toCamelCase(rows[0]));
@@ -118,14 +112,12 @@ export const create = async (req, res, next) => {
     const fields = Object.keys(req.body);
     const values = Object.values(req.body);
 
-    const setQuery = fields
-      .map((f, i) => `${toSnakeCase(f)} = $${i + 1}`)
-      .join(", ");
+    const setQuery = fields.map((f) => `${toSnakeCase(f)}`).join(", ");
 
     const { rows } = await pool.query(
       `
         INSERT INTO trip_transaction (${setQuery}, total_price, user_id) 
-        VALUES (${fields.length + 1}) 
+        VALUES (${fields.length}) 
         RETURNING *`,
       [...values, totalPrice, userId],
     );
@@ -159,10 +151,9 @@ export const update = async (req, res, next) => {
     if (!rows.length) {
       return errorResp(
         res,
-        "Not Found",
+        "Transaction not found or cannot be updated",
         "NOT_FOUND",
         404,
-        "Transaction not found or cannot be updated",
       );
     }
 
@@ -192,13 +183,7 @@ export const remove = async (req, res, next) => {
     );
 
     if (!rowCount) {
-      return errorResp(
-        res,
-        "Not Found",
-        "NOT_FOUND",
-        404,
-        "Transaction not found",
-      );
+      return errorResp(res, "Transaction not found", "NOT_FOUND", 404);
     }
 
     successResp(res, null, "Transaction deleted");

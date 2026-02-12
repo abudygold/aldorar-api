@@ -11,6 +11,7 @@ const router = express.Router();
 
 // Public
 router.get("/", ctrl.findAll);
+router.get("/publish", ctrl.findPublish);
 router.get("/:id", ctrl.findOne);
 
 // Protected

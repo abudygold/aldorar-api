@@ -16,13 +16,14 @@ import slowDown from "express-slow-down";
 const app = express();
 const speedLimiter = slowDown({
   windowMs: 1 * 60 * 1000, // 1 menit
-  delayAfter: 5, // setelah 5 request
+  delayAfter: 10, // setelah 10 request
   delayMs: () => 100, // tiap request berikutnya delay 100ms
 });
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL,
+    // origin: process.env.FRONTEND_URL,
+    origin: "*",
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],

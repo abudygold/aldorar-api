@@ -6,10 +6,9 @@ export const validate = (schema) => (req, res, next) => {
   if (!result.success) {
     return errorResp(
       res,
-      "Validation error",
+      result.error.flatten().fieldErrors,
       "VALIDATION_ERROR",
       400,
-      result.error.flatten().fieldErrors,
     );
   }
 

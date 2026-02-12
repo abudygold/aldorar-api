@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { makeSlug } from "../../utils/make-slug.js";
 
 /* Common fields (reusable) */
 const tripTypeEnum = z.enum(["regular", "plus", "private"]);
@@ -12,8 +13,8 @@ const hotelStarSchema = z.number().int().min(1).max(5);
 export const createSchema = z.object({
   title: stringMinMax,
 
-  packageType: packageTypeEnum,
-  tripType: tripTypeEnum,
+  packageType: packageTypeEnum.optional().default("umrah"),
+  tripType: tripTypeEnum.default("regular"),
   durationDays: z.number().int().positive(),
   quota: z.number().int(),
 
@@ -32,13 +33,23 @@ export const createSchema = z.object({
   mekkahHotelName: stringMinMax,
   mekkahHotelStar: hotelStarSchema,
 
-  isPlusThaif: z.boolean(),
-  isHighSpeedTrain: z.boolean(),
-  isPublish: z.boolean().optional(),
+  isPlusThaif: z.boolean().optional().default(false),
+  isHighSpeedTrain: z.boolean().optional().default(false),
+  isPublish: z.boolean().optional().default(false),
 });
 
 export const updateSchema = createSchema
   .partial()
+  .extend({
+    slug: z.string().optional(),
+  })
   .refine((data) => Object.keys(data).length > 0, {
     message: "At least one field must be updated",
+  })
+  .transform((data) => {
+    // Logic: If title exists and slug doesn't, create it
+    if (data.title) {
+      return { ...data, slug: makeSlug(data.title) };
+    }
+    return data;
   });

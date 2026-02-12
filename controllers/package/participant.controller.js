@@ -10,10 +10,9 @@ export const findAll = async (req, res, next) => {
     if (!transactionId) {
       return errorResp(
         res,
-        "Validation error",
+        "transactionId is required",
         "VALIDATION_ERROR",
         400,
-        "transactionId is required",
       );
     }
 
@@ -44,7 +43,7 @@ export const findOne = async (req, res, next) => {
     );
 
     if (!rows.length) {
-      return errorResp(res, "Not found", "NOT_FOUND", 404, "Jamaah not found");
+      return errorResp(res, "Participant not found", "NOT_FOUND", 404, "");
     }
 
     successResp(res, toCamelCase(rows[0]));
@@ -58,14 +57,12 @@ export const create = async (req, res, next) => {
     const fields = Object.keys(req.body);
     const values = Object.values(req.body);
 
-    const setQuery = fields
-      .map((f, i) => `${toSnakeCase(f)} = $${i + 1}`)
-      .join(", ");
+    const setQuery = fields.map((f) => `${toSnakeCase(f)}`).join(", ");
 
     const { rows } = await pool.query(
       `
         INSERT INTO trip_participant (${setQuery}) 
-        VALUES (${fields.length + 1}) 
+        VALUES (${fields.length}) 
         RETURNING *
       `,
       [...values],
@@ -99,14 +96,13 @@ export const update = async (req, res, next) => {
     if (!rows.length) {
       return errorResp(
         res,
-        "Not Found",
+        "Participant not found or cannot be updated",
         "NOT_FOUND",
         404,
-        "Jamaah not found or cannot be updated",
       );
     }
 
-    successResp(res, toCamelCase(rows[0]), "Jamaah updated");
+    successResp(res, toCamelCase(rows[0]), "Participant updated");
   } catch (err) {
     next(err);
   }
@@ -127,10 +123,10 @@ export const remove = async (req, res, next) => {
     );
 
     if (!rowCount) {
-      return errorResp(res, "Not found", "NOT_FOUND", 404, "Jamaah not found");
+      return errorResp(res, "Participant not found", "NOT_FOUND", 404);
     }
 
-    successResp(res, null, "Jamaah deleted successfully");
+    successResp(res, null, "Participant deleted successfully");
   } catch (err) {
     next(err);
   }

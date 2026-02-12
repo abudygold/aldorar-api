@@ -80,13 +80,7 @@ export const findOne = async (req, res, next) => {
     );
 
     if (!rows.length) {
-      return errorResp(
-        res,
-        "Not found",
-        "NOT_FOUND",
-        404,
-        `Price with ID ${id} not found`,
-      );
+      return errorResp(res, `Price with ID ${id} not found`, "NOT_FOUND", 404);
     }
 
     successResp(res, toCamelCase(rows[0]));
@@ -100,14 +94,12 @@ export const create = async (req, res, next) => {
     const fields = Object.keys(req.body);
     const values = Object.values(req.body);
 
-    const setQuery = fields
-      .map((f, i) => `${toSnakeCase(f)} = $${i + 1}`)
-      .join(", ");
+    const setQuery = fields.map((f) => `${toSnakeCase(f)}`).join(", ");
 
     const { rows } = await pool.query(
       `
         INSERT INTO trip_price (${setQuery}) 
-        VALUES (${fields.length + 1}) 
+        VALUES (${fields.length}) 
         RETURNING *`,
       [...values],
     );
@@ -118,10 +110,9 @@ export const create = async (req, res, next) => {
     if (err.code === "23505") {
       return errorResp(
         res,
-        "Duplicate room type",
+        "Room type already exists for this package",
         "DUPLICATE",
         409,
-        "Room type already exists for this package",
       );
     }
     next(err);
@@ -150,13 +141,7 @@ export const update = async (req, res, next) => {
     );
 
     if (!rows.length) {
-      return errorResp(
-        res,
-        "Not found",
-        "NOT_FOUND",
-        404,
-        `Price with ID ${id} not found`,
-      );
+      return errorResp(res, `Price with ID ${id} not found`, "NOT_FOUND", 404);
     }
 
     successResp(res, toCamelCase(rows[0]), "Price updated successfully");
@@ -174,13 +159,7 @@ export const remove = async (req, res, next) => {
     ]);
 
     if (!result.rowCount) {
-      return errorResp(
-        res,
-        "Not found",
-        "NOT_FOUND",
-        404,
-        `Price with ID ${id} not found`,
-      );
+      return errorResp(res, `Price with ID ${id} not found`, "NOT_FOUND", 404);
     }
 
     successResp(res, null, "Price deleted successfully");

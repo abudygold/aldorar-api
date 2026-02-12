@@ -75,14 +75,12 @@ export const create = async (req, res, next) => {
     const fields = Object.keys(req.body);
     const values = Object.values(req.body);
 
-    const setQuery = fields
-      .map((f, i) => `${toSnakeCase(f)} = $${i + 1}`)
-      .join(", ");
+    const setQuery = fields.map((f) => `${toSnakeCase(f)}`).join(", ");
 
     const { rows } = await pool.query(
       `
         INSERT INTO trip_payment (${setQuery}) 
-        VALUES (${fields.length + 1}) 
+        VALUES (${fields.length}) 
         RETURNING *`,
       [...values],
     );
@@ -116,10 +114,9 @@ export const update = async (req, res, next) => {
     if (!rows.length) {
       return errorResp(
         res,
-        "Not Found",
+        "Payment not found or cannot be updated",
         "NOT_FOUND",
         404,
-        "Payment not found or cannot be updated",
       );
     }
 

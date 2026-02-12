@@ -57,7 +57,7 @@ export const findOne = async (req, res, next) => {
     );
 
     if (!rows.length) {
-      return errorResp(res, "Not Found", "NOT_FOUND", 404, "User not found");
+      return errorResp(res, "User not found", "NOT_FOUND", 404);
     }
 
     successResp(res, toCamelCase(rows[0]));
@@ -117,7 +117,7 @@ export const update = async (req, res, next) => {
     );
 
     if (!rows.length) {
-      return errorResp(res, "Not Found", "NOT_FOUND", 404, "User not found");
+      return errorResp(res, "User not found", "NOT_FOUND", 404);
     }
 
     successResp(res, toCamelCase(rows[0]), "User updated");
@@ -140,7 +140,7 @@ export const remove = async (req, res, next) => {
     );
 
     if (!rowCount) {
-      return errorResp(res, "Not Found", "NOT_FOUND", 404, "User not found");
+      return errorResp(res, "User not found", "NOT_FOUND", 404);
     }
 
     successResp(res, null, "User deleted successfully");

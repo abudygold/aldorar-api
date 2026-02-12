@@ -90,10 +90,9 @@ export const update = async (req, res, next) => {
     if (!rows.length) {
       return errorResp(
         res,
-        "Validation error",
+        `Category with ID ${id} does not exist`,
         "VALIDATION_ERROR",
         404,
-        `Category with ID ${id} does not exist`,
       );
     }
 

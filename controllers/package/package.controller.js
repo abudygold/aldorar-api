@@ -2,7 +2,7 @@ import { pool } from "../../config/db.js";
 import { toCamelCase } from "../../utils/camelcase.js";
 import { toSnakeCase } from "../../utils/snakecase.js";
 import { successResp, errorResp } from "../../utils/response.js";
-import { makeSlug } from "../../utils/make-slug.js";
+import { updateSchema } from "../../validations/package/package.validation.js";
 
 export const findAll = async (req, res, next) => {
   try {
@@ -15,7 +15,56 @@ export const findAll = async (req, res, next) => {
       `
         SELECT COUNT(*)::int AS total
         FROM trip_package
-        WHERE is_publish = true AND deleted_at IS NULL
+        WHERE deleted_at IS NULL
+      `,
+    );
+
+    const total = countResult.rows[0].total;
+    const totalPages = Math.ceil(total / limit);
+
+    // 2️⃣ Get paginated data
+    const { rows } = await pool.query(
+      `
+        SELECT * FROM trip_package
+        WHERE deleted_at IS NULL 
+        ORDER BY departure_date ASC
+        LIMIT $1 OFFSET $2
+      `,
+      [limit, offset],
+    );
+
+    successResp(
+      res,
+      {
+        rows: toCamelCase(rows),
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNext: page < totalPages,
+          hasPrev: page > 1,
+        },
+      },
+      "Package list",
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const findPublish = async (req, res, next) => {
+  try {
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(parseInt(req.query.limit, 10) || 10, 100); // max 100
+    const offset = (page - 1) * limit;
+
+    // 1️⃣ Get total count
+    const countResult = await pool.query(
+      `
+        SELECT COUNT(*)::int AS total
+        FROM trip_package
+        WHERE is_publish = true AND deleted_at IS NULL 
       `,
     );
 
@@ -70,17 +119,21 @@ export const findOne = async (req, res, next) => {
 
 export const create = async (req, res, next) => {
   try {
-    const fields = Object.keys(req.body);
-    const values = Object.values(req.body);
+    const result = updateSchema.safeParse(req.body);
 
-    const setQuery = fields
-      .map((f, i) => `${toSnakeCase(f)} = $${i + 1}`)
-      .join(", ");
+    if (!result.success) {
+      return errorResp(res, result.error, "VALIDATION_ERROR", 400);
+    }
+
+    const fields = Object.keys(result.data);
+    const values = Object.values(result.data);
+    const setQuery = fields.map((f) => `${toSnakeCase(f)}`).join(", ");
+    const setValue = fields.map((_, i) => `$${i + 1}`).join(", ");
 
     const { rows } = await pool.query(
       `
         INSERT INTO trip_package (${setQuery}) 
-        VALUES (${fields.length + 1}) 
+        VALUES (${setValue}) 
         RETURNING *`,
       [...values],
     );
@@ -93,13 +146,14 @@ export const create = async (req, res, next) => {
 
 export const update = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const updateData = { ...req.body };
+    const result = updateSchema.safeParse(req.body);
 
-    // 🔥 Auto-generate slug if title is updated
-    if (updateData.title) {
-      updateData.slug = makeSlug(updateData.title);
+    if (!result.success) {
+      return errorResp(res, result.error, "VALIDATION_ERROR", 400);
     }
+
+    const { id } = req.params;
+    const updateData = { ...result.data };
 
     const fields = Object.keys(updateData);
     const values = Object.values(updateData);
@@ -121,10 +175,9 @@ export const update = async (req, res, next) => {
     if (!rows.length) {
       return errorResp(
         res,
-        "Not found",
+        `Package with ID ${id} not found`,
         "NOT_FOUND",
         404,
-        `Package with ID ${id} not found`,
       );
     }
 
@@ -150,10 +203,9 @@ export const remove = async (req, res, next) => {
     if (!rowCount) {
       return errorResp(
         res,
-        "Not found",
+        `Package with ID ${id} not found`,
         "NOT_FOUND",
         404,
-        `Package with ID ${id} not found`,
       );
     }
 

@@ -6,6 +6,7 @@ import {
   createSchema,
   updateSchema,
 } from "../../validations/blog/blog.validation.js";
+import { upload } from "../../utils/multer.js";
 
 const router = express.Router();
 
@@ -14,8 +15,20 @@ router.get("/", ctrl.findAll);
 router.get("/:id", ctrl.findOne);
 
 // PROTECTED
-router.post("/", auth, validate(createSchema), ctrl.create);
-router.put("/:id", auth, validate(updateSchema), ctrl.update);
+router.post(
+  "/",
+  auth,
+  upload.single("cover"),
+  validate(createSchema),
+  ctrl.create,
+);
+router.put(
+  "/:id",
+  auth,
+  upload.single("cover"),
+  validate(updateSchema),
+  ctrl.update,
+);
 router.delete("/:id", auth, ctrl.remove);
 
 export default router;

@@ -2,7 +2,6 @@ import { pool } from "../../config/db.js";
 import { toCamelCase } from "../../utils/camelcase.js";
 import { toSnakeCase } from "../../utils/snakecase.js";
 import { successResp, errorResp } from "../../utils/response.js";
-import { makeSlug } from "../../utils/make-slug.js";
 
 export const findAll = async (req, res, next) => {
   try {
@@ -24,6 +23,7 @@ export const findAll = async (req, res, next) => {
     const { rows } = await pool.query(
       `
         SELECT
+          b.id,
           b.title,
           b.slug,
           b.short_content,
@@ -63,13 +63,20 @@ export const findOne = async (req, res, next) => {
     const { rows } = await pool.query(
       ` 
         SELECT
+          b.id,
           b.title,
           b.content,
           b.short_content,
           b.thumbnail_url,
+          b.is_publish,
           b.created_at,
           b.updated_at,
-          c.label AS category,
+          json_build_object(
+            'id', c.id,
+            'label', c.label,
+            'value', c.value,
+            'code', c.code
+          ) AS category,
           u.full_name AS author
         FROM blog b
         JOIN categories c ON c.id = b.category_id
@@ -87,21 +94,40 @@ export const findOne = async (req, res, next) => {
 
 export const create = async (req, res, next) => {
   try {
-    const data = req.body;
+    const result = updateSchema.safeParse(req.body);
+
+    if (!result.success) {
+      return errorResp(res, result.error, "VALIDATION_ERROR", 400);
+    }
+
+    if (req.file?.path) {
+      result.data.thumbnailUrl = req.file.path; // Cloudinary URL
+    }
+
+    const exists = await pool.query(`SELECT 1 FROM blog WHERE slug = $1`, [
+      result.data.slug,
+    ]);
+
+    if (exists.rowCount > 0) {
+      return errorResp(
+        null,
+        "Slug sudah digunakan artikel lain",
+        "VALIDATION_ERROR",
+        409,
+      );
+    }
+
+    const fields = Object.keys(result.data);
+    const values = Object.values(result.data);
+    const setQuery = fields.map((f) => `${toSnakeCase(f)}`).join(", ");
+    const setValue = fields.map((_, i) => `$${i + 1}`).join(", ");
+
     const { rows } = await pool.query(
-      `INSERT INTO blog (
-        title, slug, content, short_content, thumbnail_url, category_id, author_id, is_publish
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
-      [
-        data.title,
-        makeSlug(data.title),
-        data.content,
-        data.shortContent,
-        data.thumbnailUrl,
-        data.categoryId,
-        req.user.id,
-        data.isPublish ?? true,
-      ],
+      `
+        INSERT INTO blog (${setQuery}) 
+        VALUES (${setValue}) 
+        RETURNING *`,
+      [...values],
     );
 
     successResp(res, toCamelCase(rows[0]), "Blog created successfully");
@@ -112,12 +138,42 @@ export const create = async (req, res, next) => {
 
 export const update = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const updateData = { ...req.body };
+    const result = updateSchema.safeParse(req.body);
 
-    // 🔥 Auto-generate slug if title is updated
-    if (updateData.title) {
-      updateData.slug = makeSlug(updateData.title);
+    if (!result.success) {
+      return errorResp(res, result.error, "VALIDATION_ERROR", 400);
+    }
+
+    const { id } = req.params;
+    const updateData = { ...result.data };
+
+    if (updateData.isPublish) {
+      updateData.isPublish = Boolean(updateData.isPublish);
+    }
+
+    if (req.file?.path) {
+      updateData.thumbnailUrl = req.file.path; // Cloudinary URL
+    }
+
+    // cek slug duplicate selain dirinya sendiri
+    const exists = await pool.query(
+      `
+        SELECT 1 
+        FROM blog 
+        WHERE slug = $1
+        AND id <> $2
+        AND deleted_at IS NULL
+      `,
+      [updateData.slug, id],
+    );
+
+    if (exists.rowCount > 0) {
+      return errorResp(
+        res,
+        `Slug sudah digunakan artikel lain`,
+        "VALIDATION_ERROR",
+        409,
+      );
     }
 
     const fields = Object.keys(updateData);
@@ -135,10 +191,9 @@ export const update = async (req, res, next) => {
     if (!rows.length) {
       return errorResp(
         res,
-        "Validation error",
+        `Blog with ID ${id} does not exist`,
         "VALIDATION_ERROR",
         404,
-        `Blog with ID ${id} does not exist`,
       );
     }
 
