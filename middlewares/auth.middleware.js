@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import { pool } from "../config/db.js";
 import { JWT_SECRET } from "../config/jwt.js";
-import { errorResp } from "../utils/response.js";
+import { errorResp } from "../helper/response.js";
 
 export const auth = async (req, res, next) => {
   try {

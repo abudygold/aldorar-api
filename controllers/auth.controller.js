@@ -2,7 +2,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { pool } from "../config/db.js";
 import { JWT_SECRET, JWT_EXPIRES } from "../config/jwt.js";
-import { successResp, errorResp } from "../utils/response.js";
+import { successResp, errorResp } from "../helper/response.js";
 
 /* ================= LOGIN ================= */
 export const login = async (req, res, next) => {

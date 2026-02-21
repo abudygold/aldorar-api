@@ -1,4 +1,4 @@
-import { errorResp } from "../utils/response.js";
+import { errorResp } from "../helper/response.js";
 
 export const validate = (schema) => (req, res, next) => {
   const result = schema.safeParse(req.body);
@@ -6,10 +6,11 @@ export const validate = (schema) => (req, res, next) => {
   if (!result.success) {
     return errorResp(
       res,
-      "Validation error",
+      Object.keys(result.error.flatten().fieldErrors).length > 0
+        ? result.error.flatten().fieldErrors
+        : result.error.flatten().formErrors,
       "VALIDATION_ERROR",
       400,
-      result.error.flatten().fieldErrors,
     );
   }
 

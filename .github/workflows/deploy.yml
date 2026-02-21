@@ -91,9 +91,18 @@ jobs:
             git checkout ${{ github.ref_name }}
             git pull origin ${{ github.ref_name }}
 
-            echo "🚀 Restart Docker"
-            docker compose down
+            cd ..
 
-            echo "🚀 Deploying to ${{ env.TARGET }}"
-            docker compose up -d --build
+            if [ "${{ github.ref_name }}" = "main" ]; then
+              echo "🚀 Deploying production environment"
+              docker rm -f aldorar-api-prod postgres_prod
+              docker image rm -f aldorar-api:prod
+              docker compose up -d --build api-prod postgres-prod
+            else
+              echo "🚀 Deploying development environment"
+              docker rm -f aldorar-api-dev postgres_dev
+              docker image rm -f aldorar-api:dev
+              docker compose up -d --build api-dev postgres-dev
+            fi
+
             docker image prune -f

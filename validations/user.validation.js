@@ -6,7 +6,10 @@ export const createSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
   phone: z.string().optional(),
-  role: z.enum(["admin", "customer", "owner"]).optional(),
+  role: z
+    .enum(["owner", "admin", "staff", "finance", "visa_officer"])
+    .optional()
+    .default("staff"),
   isActive: z.boolean().optional(),
 });
 
