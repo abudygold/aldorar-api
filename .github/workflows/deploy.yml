@@ -92,8 +92,14 @@ jobs:
             git pull origin ${{ github.ref_name }}
 
             echo "🚀 Restart Docker"
-            docker compose down
-
             echo "🚀 Deploying to ${{ env.TARGET }}"
-            docker compose up -d --build
+
+            if [ "${{ github.ref_name }}" = "main" ]; then
+              docker compose -p api-prod down
+              docker compose up -d --build api-prod postgres-prod
+            else
+              docker compose -p api-dev down
+              docker compose up -d --build api-dev postgres-dev
+            fi
+
             docker image prune -f

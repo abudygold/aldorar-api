@@ -8,8 +8,4 @@ export const createSchema = z.object({
   code: characterSchema,
 });
 
-export const updateSchema = createSchema
-  .partial()
-  .refine((data) => Object.keys(data).length > 0, {
-    message: "At least one field must be updated",
-  });
+export const updateSchema = createSchema.partial();

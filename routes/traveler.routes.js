@@ -1,11 +1,11 @@
 import express from "express";
-import { auth } from "../../middlewares/auth.middleware.js";
-import { validate } from "../../middlewares/validate.js";
-import * as ctrl from "../../controllers/package/payment.controller.js";
+import { auth } from "../middlewares/auth.middleware.js";
+import { validate } from "../middlewares/validate.js";
+import * as ctrl from "../controllers/traveler.controller.js";
 import {
   createSchema,
   updateSchema,
-} from "../../validations/package/payment.validation.js";
+} from "../validations/traveler.validation.js";
 
 const router = express.Router();
 

@@ -23,7 +23,7 @@ const storage = new CloudinaryStorage({
   },
 });
 
-export const upload = multer({
+export const fileUpload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   fileFilter: (req, file, cb) => {
@@ -34,3 +34,18 @@ export const upload = multer({
     }
   },
 });
+
+export const fileDestroy = async (fileName) => {
+  try {
+    const result = await cloudinary.uploader.destroy(
+      `${process.env.CLOUDINARY_FOLDER}/${fileName}`,
+      {
+        resource_type: "image",
+      },
+    );
+    return result;
+  } catch (err) {
+    console.error("Cloudinary destroy error:", err);
+    throw err;
+  }
+};

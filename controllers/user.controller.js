@@ -1,44 +1,25 @@
 import bcrypt from "bcrypt";
-import { pool } from "../config/db.js";
-import { toCamelCase } from "../utils/camelcase.js";
-import { toSnakeCase } from "../utils/snakecase.js";
-import { successResp, errorResp } from "../utils/response.js";
+import { successResp } from "../helper/response.js";
+import {
+  insertOne,
+  paginate,
+  selectAll,
+  softDelete,
+  updateOne,
+} from "../helper/query.js";
 
 export const findAll = async (req, res, next) => {
   try {
-    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
-    const limit = Math.min(parseInt(req.query.limit, 10) || 10, 100); // max 100
-    const offset = (page - 1) * limit;
-
-    // 1️⃣ Get total count
-    const countResult = await pool.query(`
-      SELECT COUNT(*)::int AS total FROM users
-    `);
-
-    const total = countResult.rows[0].total;
-    const totalPages = Math.ceil(total / limit);
-
-    // 2️⃣ Get paginated data
-    const { rows } = await pool.query(
-      `
-        SELECT id, first_name, last_name, full_name, email, phone, role, created_at, updated_at 
-        FROM users 
-        LIMIT $1 OFFSET $2
-      `,
-      [limit, offset],
-    );
-
-    successResp(res, {
-      rows: toCamelCase(rows),
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages,
-        hasNext: page < totalPages,
-        hasPrev: page > 1,
-      },
+    const result = await paginate({
+      table: "users",
+      select: ["first_name", "last_name", "email", "phone", "is_active"],
+      filters: { deleted_at: null },
+      orderBy: "created_at DESC",
+      page: parseInt(req.query.page, 10) || 1,
+      limit: Math.min(parseInt(req.query.limit, 10) || 10, 100),
     });
+
+    return successResp(res, result, "Users retrieved successfully");
   } catch (err) {
     next(err);
   }
@@ -47,20 +28,19 @@ export const findAll = async (req, res, next) => {
 export const findOne = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { rows } = await pool.query(
-      `
-        SELECT id, first_name, last_name, full_name, email, phone, role, created_at, updated_at 
-        FROM users 
-        WHERE id = $1
-      `,
-      [id],
-    );
 
-    if (!rows.length) {
-      return errorResp(res, "User not found", "NOT_FOUND", 404);
-    }
+    const result = await selectAll({
+      table: "users",
+      select: ["first_name", "last_name", "email", "phone", "is_active"],
+      filters: {
+        email: id,
+        deleted_at: null,
+      },
+    });
 
-    successResp(res, toCamelCase(rows[0]));
+    console.log(result);
+
+    return successResp(res, result[0], "User retrieved successfully");
   } catch (err) {
     next(err);
   }
@@ -68,29 +48,26 @@ export const findOne = async (req, res, next) => {
 
 export const create = async (req, res, next) => {
   try {
-    const { firstName, lastName, email, password, phone, role, isActive } =
-      req.body;
-    const passwordHash = await bcrypt.hash(password, 10);
+    const { password, ...rest } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const userData = { ...rest, passwordHash: hashedPassword };
 
-    const { rows } = await pool.query(
-      `
-        INSERT INTO users
-        (first_name, last_name, email, password_hash, phone, role, is_active)
-        VALUES ($1,$2,$3,$4,$5,$6,$7)
-        RETURNING id, first_name, last_name, full_name, email, role
-      `,
-      [
-        firstName,
-        lastName,
-        email,
-        passwordHash,
-        phone,
-        role || "customer",
-        isActive || false,
+    const result = await insertOne({
+      table: "users",
+      data: userData,
+      allowedPayload: [
+        "firstName",
+        "lastName",
+        "email",
+        "passwordHash",
+        "phone",
+        "role",
+        "isActive",
       ],
-    );
+      returning: "first_name, last_name, email, phone, role, is_active",
+    });
 
-    successResp(res, toCamelCase(rows[0]), "User created successfully");
+    return successResp(res, result, "User created successfully");
   } catch (err) {
     next(err);
   }
@@ -100,27 +77,24 @@ export const update = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const fields = Object.keys(req.body);
-    const values = Object.values(req.body);
+    const result = await updateOne({
+      table: "users",
+      data: req.body,
+      filters: {
+        email: id,
+      },
+      allowedPayload: [
+        "firstName",
+        "lastName",
+        "email",
+        "phone",
+        "role",
+        "isActive",
+      ],
+      returning: "first_name, last_name, email, phone, role, is_active",
+    });
 
-    const setQuery = fields
-      .map((f, i) => `${toSnakeCase(f)} = $${i + 1}`)
-      .join(", ");
-
-    const { rows } = await pool.query(
-      `
-        UPDATE users SET ${setQuery}
-        WHERE id = $${fields.length + 1} AND deleted_at IS NULL
-        RETURNING id, full_name, email, role
-      `,
-      [...values, id],
-    );
-
-    if (!rows.length) {
-      return errorResp(res, "User not found", "NOT_FOUND", 404);
-    }
-
-    successResp(res, toCamelCase(rows[0]), "User updated");
+    return successResp(res, result, "User updated successfully");
   } catch (err) {
     next(err);
   }
@@ -129,21 +103,17 @@ export const update = async (req, res, next) => {
 export const remove = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const { id: userId } = req.user;
 
-    const { rowCount } = await pool.query(
-      `
-        UPDATE users
-        SET deleted_at = NOW()
-        WHERE id = $1 AND deleted_at IS NULL
-      `,
-      [id],
-    );
+    const result = await softDelete({
+      table: "users",
+      deletedBy: userId,
+      filters: {
+        id,
+      },
+    });
 
-    if (!rowCount) {
-      return errorResp(res, "User not found", "NOT_FOUND", 404);
-    }
-
-    successResp(res, null, "User deleted successfully");
+    return successResp(res, result, "User deleted successfully");
   } catch (err) {
     next(err);
   }

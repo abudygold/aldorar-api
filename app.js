@@ -1,17 +1,16 @@
 import express from "express";
 import cors from "cors";
+import slowDown from "express-slow-down";
+import { errorHandler } from "./middlewares/error.middleware.js";
 import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
-import blogRoutes from "./routes/blog/blog.routes.js";
-import categoriesRoutes from "./routes/blog/categories.routes.js";
-import packageRoutes from "./routes/package/package.routes.js";
-import priceRoutes from "./routes/package/price.routes.js";
-import transactionRoutes from "./routes/package/transaction.routes.js";
-import paymentRoutes from "./routes/package/payment.routes.js";
-import participantRoutes from "./routes/package/participant.routes.js";
+import blogRoutes from "./routes/blog.routes.js";
+import categoriesRoutes from "./routes/categories.routes.js";
+import packageRoutes from "./routes/package.routes.js";
+import travelerRoutes from "./routes/traveler.routes.js";
+import transactionRoutes from "./routes/transaction.routes.js";
 import uploadRoutes from "./routes/upload.routes.js";
-import { errorHandler } from "./middlewares/error.middleware.js";
-import slowDown from "express-slow-down";
+import paymentRoutes from "./routes/payment.routes.js";
 
 const app = express();
 const speedLimiter = slowDown({
@@ -22,8 +21,7 @@ const speedLimiter = slowDown({
 
 app.use(
   cors({
-    // origin: process.env.FRONTEND_URL,
-    origin: "*",
+    origin: process.env.FRONTEND_URL,
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -39,10 +37,9 @@ app.use("/user", userRoutes);
 app.use("/blog", blogRoutes);
 app.use("/categories", categoriesRoutes);
 app.use("/package", packageRoutes);
-app.use("/price", priceRoutes);
+app.use("/traveler", travelerRoutes);
 app.use("/transaction", transactionRoutes);
-app.use("/payment", paymentRoutes);
-app.use("/participant", participantRoutes);
 app.use("/upload", uploadRoutes);
+app.use("/payment", paymentRoutes);
 
 export default app;
